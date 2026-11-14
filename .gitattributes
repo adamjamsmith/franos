@@ -1,0 +1,7 @@
+# Let git tidy line endings in text files, and never touch these.
+* text=auto
+*.pdf binary
+*.mp4 binary
+*.png binary
+*.jpg binary
+*.ico binary

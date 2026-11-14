@@ -1,0 +1,121 @@
+# Decisions log
+
+All decided by Adam on 14 November 2026 unless noted. Add new decisions at the bottom, with the date.
+
+## Direction
+| # | Decision | Why |
+|---|---|---|
+| 1 | **Own build** (not HubSpot or another CRM), replacing GoHighLevel | Control, low cost, leads in a database we own, an API the agents can use |
+| 2 | **One system for all clients** (multi-tenant) | One bill, one codebase. New client = new settings, not a snapshot |
+| 3 | **Refresh Renovation is the first client.** Oven Rescue stays on GHL until v2 is proven, then is imported | Avoids moving a live client first |
+| 4 | Keep costs as low as possible; free tools where sensible | |
+
+## Stack
+| # | Decision | Notes |
+|---|---|---|
+| 5 | **Next.js** for the app, hosted on **AWS** (pay per use), not Vercel | Fast pages for ad traffic. Adam's brother Ollie uses Next.js |
+| 6 | **Postgres** on **Neon, London region** (aws-eu-west-2) | Cheapest. Data stays in the UK. Standard Postgres, so it can move to AWS later |
+| 7 | **Videos on AWS** (S3 + CloudFront), with adaptive-quality versions made with ffmpeg | CloudFront's free 1 TB/month covers expected viewing |
+| 8 | **Our own video player tracking:** who watched what, how far, drop-off points | Works on any host |
+| 9 | Login built into the app (free auth library); sign in with Google/Microsoft or an email link; **two-step login required** | |
+| 10 | Code stored on **GitHub** (private) | *To confirm with Adam* |
+
+## Email
+| # | Decision | Notes |
+|---|---|---|
+| 11 | **Amazon SES** sends everything (~$0.10 per 1,000) | Needs production access from AWS (leaving the sandbox) |
+| 12 | Each client gets a **separate franchise domain that Franchise Right registers and owns** (e.g. refreshrenovationsfranchise.co.uk) | Protects the client's main domain. Better inbox placement |
+| 13 | **All franchise-domain email comes into franOS first:** logged, then forwarded to the consultant's normal inbox. The consultant replies via a "send as" alias that goes out through franOS, so it's logged too | Track everything. No client email-admin access needed |
+| 14 | **More emails is fine.** Every email has a job: move the lead to the next path step | |
+| 15 | No automatic reply drafting or auto-responding for now | Tracking only |
+
+## Calls and calendar
+| # | Decision | Notes |
+|---|---|---|
+| 16 | **Our own booking page** reading the consultant's Google/Outlook calendar; Meet or Zoom link; cancel/reschedule links | Free |
+| 17 | Video calls on **Zoom or Google Meet, whichever the client already pays for** (recording needs Zoom Pro or Workspace Business Standard+) | Recordings, transcripts and attendance pulled in automatically |
+| 18 | **Tracked phone number per client** (Twilio-style, ~£5–15/month). Inbound rings the consultant's mobile. Outbound by click-to-call (rings the consultant first, then the lead) | Short recording notice the lead hears |
+| 19 | All recordings and transcripts saved on the contact. AI extracts objections, questions, motivations and facts into fixed categories | Fuels avatar learning and content |
+
+## People and access
+| # | Decision | Notes |
+|---|---|---|
+| 20 | Three roles: **Owner** (Franchise Right, everything), **Client** (brand owner / master licence holder, all of their brand's data), **Consultant** (works the leads, takes the calls; no export or delete) | Refresh: John English = Client, Mike = Consultant |
+| 21 | Consultants see **all** the brand's leads. **No lead assignment for now.** One consultant per brand to start | Assignment later if needed |
+
+## Avatar, funnel and ads
+| # | Decision | Notes |
+|---|---|---|
+| 22 | The Charter sits above everything; a **Strategist** agent justifies all work against it | Adam wants to be managed too |
+| 23 | **Avatar card per brand.** v0 from a franchisor/franchisee interview (Refresh: Ali Irteza), confirmed by more franchisee interviews | |
+| 24 | **Interview as many franchisees as possible.** Use avatar moments in the VSL and ads; keep every clip tagged | More testimonials is better |
+| 25 | **Two scores, not three:** Fit (who they are) and Path (what they did). Replaces Level / Temperature / Lead Status | |
+| 26 | Emails send the **next missing piece of the path** rather than separate fixed chains. Call reminders stay | |
+| 27 | **Ads launch as a Call campaign** (optimise on Schedule) with a **broad form** that asks the avatar questions without filtering. When data shows which answers predict good calls, **filter on the form**, so Schedule becomes a qualified booking by itself | No separate Qualified-lead event. Leather Hero showed call optimisation works |
+| 28 | Meta gets **Lead and Schedule**; Good call and Signed go quietly in the background, with nothing optimising on them | |
+| 29 | **Funnel A/B test at Refresh launch:** A = Adam's lead-first funnel; B = Hormozi application funnel (VSL landing page → application → calendar). Judged on **cost per good call** | |
+| 30 | Hormozi-style additions: requirements stated in ads/pages; **speed-to-lead alert**; **booking window of the next few days only**; **BANT** captured on every call; **show rate** tracked | |
+| 31 | **Rejected:** guessing age from video frames. Fit scoring never uses age or gender | UK GDPR and equality risk; not needed |
+| 32 | WhatsApp later; **WhatsApp opt-in tick box on the form from day one** | |
+
+## Agents
+| # | Decision | Notes |
+|---|---|---|
+| 33 | Skills become the agents' manuals. About **12 agents** (doc 05), a shared review gate, and Adam's approval before anything goes live | |
+| 34 | Two kinds of AI: **inside franOS** (runs all the time: transcript extraction, Fit, next piece) and **Claude Code agents** (work on franOS and clients) | |
+
+## After the plan review (14 Nov 2026)
+| # | Decision | Notes |
+|---|---|---|
+| 35 | **Thin launch version.** Before go-live: funnel, form, emails, booking, Zoom with transcripts, Meta events, leads list. After go-live: tracked phone number, inbound email relay extras, dashboards | Adam wants Refresh live in about 4 days; route to that date still to be chosen |
+| 36 | **Email replies use the relay method** (replaces the "send as" alias in decision 13): franOS passes the lead's email to the consultant, the reply routes back through franOS, is logged and sent on. New emails start from the lead's page, or carry a BCC logging address | |
+| 37 | **No A/B split test** (replaces decision 29). Run one funnel for a set period, then change it and compare periods. Start with Adam's lead-first funnel | Not needed at launch. Period comparisons are affected by timing, so treat results as a guide |
+| 38 | **Zoom first.** Meet clients upload recordings until Meet is built | |
+| 39 | Row-level security in the database as a second lock on client separation | |
+| 40 | Separate email sending reputation per client, with automatic pause per brand | |
+| 41 | Build starts with three agents: Planner, Tester, Reviewer. Others join when there is content or data for them | |
+| 42 | Data protection paperwork (DPIA, sub-processor list, lawful basis) drafted by Claude for a human to check and sign | |
+| 43 | Ali's core message for Refresh: the franchise is a way into renovation that he could not have done alone. Earnings figures still need checking with John before use | |
+
+| 44 | **Refresh Renovation launches 16 December 2026 on franOS v2.** Aim: bulk of the thin version set up as an alpha within days, then testing | |
+| 45 | **Timed work runs from a jobs table in our own database, checked every minute** | Simple, visible, easy to cancel |
+| 46 | **Meta consent sits on the form:** one required tick box with small-print wording that covers sharing with Meta. No Meta pixel loads before submit; events go from the server after it. Own page and video stats run without cookies. No cookie banner | Wording needs a legal check; a required tick is weaker consent than an optional one |
+| 47 | BCC logging address for new emails the consultant starts from their own inbox | |
+| 48 | Defaults taken unless Adam says otherwise: code on a private GitHub repository; no Google Sheet dashboard for v2 (simple numbers inside franOS at launch) | |
+| 49 | **A good call = matches the avatar card and passes BANT** (budget, authority, need, timing), recorded by the consultant after each call | |
+| 50 | **Go/no-go at the freeze (about 9 December):** if v2 is not passing its tests, Refresh launches on the GHL template and moves over later | |
+| 51 | **No baseline from other brands.** Oven Rescue calls cost about £10–30; Refresh calls are expected around £100. Refresh is judged only against its own target: about £4,000 per signing, one a month. Today the client spends about £4k a month without selling one a month | |
+| 52 | **Login is an emailed 6-digit code plus the authenticator-app code. No passwords.** Google and Microsoft sign-in is skipped for now and can be added later if wanted | Adam tried the local version on 14 Nov 2026 and was happy with it |
+| 53 | **Form answers are tick-one circles (radio buttons), not drop-downs** | Adam, after trying Step 1 |
+| 54 | **The thank-you page is: text at the top, the thank-you video, and schedule a call.** No prospectus button there | The prospectus reaches the lead by email only (Step 2). Confirmed by Adam |
+| 55 | Page layouts and proper templates are reworked after the whole flow works | The form questions are still to be written |
+| 56 | **Email defaults confirmed by Adam (14 Nov 2026):** sent from the named consultant ("Mike from Refresh Renovation"), at 9:20am UK time, with about 20 sequence emails at launch | Set per brand on the Emails tab. A named person gets more opens and replies |
+| 57 | **The next-step block always pushes the earliest missing step,** in the order prospectus, call, Next steps, Questions. A lead who books a call before reading the prospectus is still pushed to the prospectus | Confirmed by Adam; already how Step 2 works |
+| 58 | **"Fit score" keeps its name.** It is worked out from the form answers only. Path progress is shown separately | Adam considered "form score" and kept Fit |
+| 59 | **Call settings for Refresh (Adam, 14 Nov 2026):** Monday to Friday 9am to 5pm, 30-minute calls with a 30-minute gap, bookable 7 days ahead, at least 2 hours' notice. Reminders the day before and 1 hour before, by email | All can be changed per brand on the Calls tab |
+| 60 | **Only people who have filled in the form can book a call** | They would not reach the booking page otherwise; every booking then has answers, Fit and consent behind it |
+| 61 | **Booking is built on working hours set in franOS first.** The consultant's Google or Outlook calendar is connected before launch | Until then franOS cannot see the consultant's other appointments |
+| 62 | **Speed-to-lead alert:** an email to the consultant for a new lead with Fit 70 or more, between 8am and 8pm | Adam is unsure whether Mike will call; cheap to keep and measure |
+| 63 | **Booking looks and works like Calendly:** month calendar, times for the chosen day, Next, then a confirm page showing name and email. Not booked in one press. Someone franOS does not know is sent to the original form | Adam, after trying Step 3. Keeps decision 60 |
+| 64 | **A form with a mistake keeps everything typed** and marks the wrong boxes in red | Adam, after trying it |
+| 65 | **The board moves leads by itself** through New, Call booked, Call done, Good call and Signed. Only Signed and Not going ahead are set by hand | Approved by Adam with Step 4. The board is always true and every lead ends with an outcome |
+| 66 | **After every call the consultant answers six questions** (budget, authority, need, timing, the kind of person we want, what happens next). franOS works out good call from them | Approved by Adam. Puts decision 49 into practice |
+| 67 | **Not going ahead reasons are a fixed list, the same for every brand:** no money, not the right time, partner not on board, not right for us, chose something else, went quiet, other | So brands can be compared |
+| 68 | **Ad spend is typed in once a month per brand** until the Meta ad account is connected | |
+| 69 | **The client role sees the board and the numbers,** including cost per signing, and can change nothing | |
+| 70 | **The board is an opportunity board with Adam's stages** (replaces the columns in decision 65): Good fit, Call scheduled, Interested, Closing, Signed. A lead joins it with a Fit score of 70 or more, or by booking a call. Closing is set by hand; the rest move by themselves. Good call is a label, not a column | Adam, after trying Step 4. These are the stages already used in GoHighLevel |
+| 71 | **One record per lead, not a separate contact and opportunity.** The lead opens in a pop-up with three tabs: Opportunity, Form, Activity. The same panel is the lead's own page | Adam wanted it as clean as possible, with nothing changed in two places |
+| 72 | **No form ever throws away what was typed** when something is wrong. It keeps everything and marks what to fix | Adam, repeated feedback. Applies to every form from now on |
+| 73 | **Call-to-action emails come back, matching today's franOS** (adds to decision 26, which keeps the changing next-step button): two sets of four daily chasers (prospectus, then call) starting 5 minutes after sign-up and stopping when a call is booked, plus "Want to talk to this person?" after a testimonial. One call-to-action email per lead per day | Adam: these are what get calls booked. Agreed in principle 14 Nov 2026; spec 16 |
+| 74 | **Two improvements on today's version:** the first "book a call" chaser goes 10 minutes after the prospectus is first opened; the testimonial follow-up fires on watching half the video, with an on/off switch per testimonial | |
+| 75 | **Call reminders go up to six, in two versions,** as today's franOS: on booking, 3 days, 1 day, 12 hours, 1 hour and 10 minutes before | Step 3 built three. Agreed in principle 14 Nov 2026 |
+| 76 | **No lead gets more than one email a day** (replaces decisions 73 and 74, the daily chasers). Each day franOS sends the most relevant one: a reaction to something they just did, else a nudge if they have been stuck for 3 days, else the next sequence email. Emails about a booked call are the only exception | Adam, 14 Nov 2026: "we can't just send a million emails", wants rhyme and reason. Hormozi's doc says nothing on frequency; its principles point to the right piece at the right moment |
+| 77 | **Reactions:** read the prospectus, watched half a testimonial, missed a call. **Nudges:** prospectus not opened, call not booked; 3 days, then once more 7 days later, two at most per step | Each is tied to a step on the path |
+| 78 | **The sequence is one email a day, in order.** No day numbers to set; the order on the Emails tab is the timetable, changed with the arrows. Switching an email off closes the gap | Adam, 14 Nov 2026: "emails in the sequence would just be daily for now". Replaces the day numbers (1, 2, 3, 5, 7...) |
+| 79 | **Six call reminders in two versions, built** (decision 75): on booking, 3 days, 1 day, 12 hours, 1 hour and 10 minutes before. Someone who has not read the prospectus is pointed at it; someone who has is pointed at Next steps and Questions. The 10-minute one is only about joining | Matches today's franOS Call Chain |
+| 80 | **Emails have five layouts,** chosen per email: Header, Header + video, Header + owner photo, No header, and Personal (plain, as if typed by the consultant). Taken from today's franOS email templates. The call to action follows the lead's next step in every layout | Adam, 14 Nov 2026. Reactions and nudges default to Personal; see docs/18 |
+| 81 | **A new brand starts with the named email library** in its planned order (VT1 Short, VT2 Short, Funding...), 24 sequence emails after the prospectus email. Wording comes from the copywriter | Replaces the five numbered placeholders |
+| 82 | **The menu is in three groups:** Work the leads (Board, Leads, Calls), How it is going (Numbers, with Form drop-off inside), Set it up (Emails, Settings). **Every setting lives under Settings** (Brand and pages, Calls, Emails, People); ad spend stays on Numbers | Adam, 14 Nov 2026: "make it better laid out". Settings had been scattered across four tabs |
+| 83 | **`docs/00-how-franos-works.md` is the current picture.** The numbered specs are history | Several specs had been amended after Adam tried them and no longer read straight |
+
+**Open:** who checks the legal wording and paperwork; real figures and support details from John English; Refresh's content (interviews, VSL, prospectus, emails).
