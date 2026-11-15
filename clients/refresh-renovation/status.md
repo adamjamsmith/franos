@@ -15,3 +15,5 @@
 **Launch date:** 16 December 2026, on franOS v2 (thin launch version). One funnel (Adam's lead-first), no A/B split.
 
 **15 Nov 2026:** the sign-up form can now be changed on screen (Settings > Form): questions, Great / OK / Poor marks, must-have answers, and a bin. The questions are still the first draft from the avatar card; no must-haves are set. Next for this brand is unchanged: the franchise domain and AWS.
+
+**15 Nov 2026, accounts:** AWS, GitHub and Neon are open. Refresh Renovation will use `refresh.franchiseright.co.uk` for its pages and email until it signs and has its own domain. The sending address exists in AWS; the three lines are in Namecheap and Amazon has verified it. The request to lift test mode went to Amazon on 15 Nov and is under review. After approval: build bounce and complaint handling, then start the 2 to 3 week warm-up.
