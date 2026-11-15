@@ -118,7 +118,8 @@ async function tell(
     readProspectus,
   };
   const from = { fromName: settings.fromName, fromAddress: settings.fromAddress };
-  if (kinds.lead) {
+  // An address that bounced, or whose owner pressed "spam", gets nothing, not even emails about their own call.
+  if (kinds.lead && !lead.emailBlockedAt) {
     const mail = leadCallEmail(kinds.lead, input);
     await deps.deliver({ ...mail, ...from, to: lead.email });
     await tx.insert(leadEvents).values({
@@ -174,7 +175,14 @@ export async function bookCall(
   session: Session,
   brand: Brand,
   deps: CallDeps,
-  input: { leadId: string; startsAt: Date; by: "lead" | "staff"; now?: Date },
+  input: {
+    leadId: string;
+    startsAt: Date;
+    by: "lead" | "staff";
+    now?: Date;
+    /** The lead's own browser and address, when they booked on the public page. Passed to Meta with the Schedule event. */
+    client?: { userAgent?: string; ip?: string };
+  },
 ): Promise<BookResult> {
   const now = input.now ?? new Date();
   try {
@@ -230,7 +238,14 @@ export async function bookCall(
           leadId: lead.id,
           eventName: "Schedule",
           eventId: `schedule-${lead.id}`,
-          payload: { callId: call.id, startsAt: call.startsAt.toISOString(), fitScore: lead.fitScore },
+          payload: {
+            callId: call.id,
+            startsAt: call.startsAt.toISOString(),
+            fitScore: lead.fitScore,
+            // Only the lead's own browser counts. A call booked by staff is never passed off as a website visit.
+            ...(input.by === "lead" && input.client?.userAgent ? { userAgent: input.client.userAgent.slice(0, 400) } : {}),
+            ...(input.by === "lead" && input.client?.userAgent && input.client.ip ? { ip: input.client.ip.slice(0, 60) } : {}),
+          },
         })
         .onConflictDoNothing({ target: [metaEvents.clientId, metaEvents.eventId] });
       await scheduleCallJobs(tx, call, now);

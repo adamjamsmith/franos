@@ -156,6 +156,13 @@ export const leads = pgTable(
     qualified: boolean("qualified").notNull().default(true),
     /** Set when the lead unsubscribes. They are never emailed again by this brand. */
     unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
+    /**
+     * Set when their address bounced for good or they marked an email as spam (reported by Amazon).
+     * Nothing at all is emailed to them again, call emails included.
+     */
+    emailBlockedAt: timestamp("email_blocked_at", { withTimezone: true }),
+    /** "bounce" or "complaint". */
+    emailBlockedReason: text("email_blocked_reason"),
     /** How the lead ended: "signed" or "not_interested" (shown as Not going ahead). Empty while they are open. */
     outcome: text("outcome"),
     /** Why they are not going ahead: one of a fixed list, the same for every brand. */

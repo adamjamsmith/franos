@@ -134,6 +134,13 @@
       "when": 1794754664174,
       "tag": "0018_meta_events_update",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794756348079,
+      "tag": "0019_email_blocked",
+      "breakpoints": true
     }
   ]
 }

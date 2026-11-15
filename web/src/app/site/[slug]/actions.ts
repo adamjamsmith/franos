@@ -142,7 +142,7 @@ export async function pickTime(form: FormData) {
   const startsAt = new Date(text(form, "startsAt"));
   if (Number.isNaN(startsAt.getTime())) return back("time");
 
-  const result = await bookCall(await appDb(), siteSession(brand.id), brand, await appCallDeps(brand), { leadId, startsAt, by: "lead" });
+  const result = await bookCall(await appDb(), siteSession(brand.id), brand, await appCallDeps(brand), { leadId, startsAt, by: "lead", client: await visitor() });
   if (!result.ok) return back(result.reason === "taken" ? "taken" : "time");
   await rememberLead(slug, leadId);
   redirect(`${callPage(slug, result.callId)}&done=${result.moved ? "moved" : "booked"}`);

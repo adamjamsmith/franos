@@ -76,7 +76,7 @@ const PLAN_EVENTS = ["video_progress", "document_open", "document_download", "ca
  * No lead gets more than one email a day. For each lead the most relevant email goes:
  * a reaction to something they just did, else a nudge if they are stuck on a step, else the
  * next in the sequence (see plan.ts). The prospectus email goes at sign-up, whatever the hour.
- * Unsubscribed leads, and leads marked signed or not going ahead, get nothing.
+ * Unsubscribed leads, leads whose address bounced or who pressed "spam", and leads marked signed or not going ahead, get nothing.
  * Once the brand's daily limit is reached, everything but the prospectus email waits for the next day.
  */
 export async function sendDueEmails(
@@ -99,6 +99,7 @@ export async function sendDueEmails(
       .where(
         and(
           isNull(leads.unsubscribedAt),
+          isNull(leads.emailBlockedAt),
           eq(leads.qualified, true),
           or(isNull(leads.outcome), notInArray(leads.outcome, FINAL_OUTCOMES)),
           onlyLeadId ? eq(leads.id, onlyLeadId) : undefined,
@@ -178,7 +179,7 @@ export async function sendDueEmails(
 /** What a lead will be emailed next and roughly when, for showing on their record. Null if nothing is coming. */
 export async function nextEmailForLead(tx: Tx, brand: Brand, leadId: string, now: Date = new Date()) {
   const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId));
-  if (!lead || !lead.qualified || lead.unsubscribedAt || FINAL_OUTCOMES.includes(lead.outcome ?? "")) return null;
+  if (!lead || !lead.qualified || lead.unsubscribedAt || lead.emailBlockedAt || FINAL_OUTCOMES.includes(lead.outcome ?? "")) return null;
   const site = siteFor(brand);
   const active = await tx.select().from(emails).where(eq(emails.active, true)).orderBy(asc(emails.position));
   const mine = await tx.select({ emailId: emailSends.emailId, sentAt: emailSends.sentAt }).from(emailSends).where(eq(emailSends.leadId, leadId));

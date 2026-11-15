@@ -59,7 +59,7 @@ franOS tells Meta when a lead signs up, books a call, has a good call and signs,
 - **Test leads never become real events.** Once a brand is live, only events from the moment it went live are sent.
 - **A person's details never leave in the clear.** Email, phone, name and postcode are tidied the way Meta specifies and then scrambled.
 - **Each event has a fixed id,** so Meta counts it once even if it is sent twice.
-- **The Lead event includes the visitor's browser and address,** captured at sign-up, which Meta needs to treat it as a website event. The consent tick covers this.
+- **The Lead and Schedule events include the visitor's browser and address,** captured at sign-up and when the lead books a call on the public page. Meta needs these to treat them as website events, which is what the ads optimise for. The consent tick covers this. A call booked by staff inside franOS goes as a system event, never as a website visit.
 - Events are sent once a minute, alongside the emails and the call reminders.
 
 ## Zoom
@@ -101,6 +101,8 @@ The owner sets the questions under **Settings > Form**. It is one tight table, l
 3. **Otherwise the next sequence email.** One a day, in the order on the Emails tab.
 
 Every email's call to action follows the lead's next step. Nothing goes between 9pm and 8am except the prospectus email at sign-up. Nothing goes to anyone who has unsubscribed, signed, is not going ahead, or didn't qualify.
+
+**Bounces and spam complaints.** When Amazon reports that an address does not work (a permanent bounce) or that the person pressed "spam" (a complaint), franOS stops every email to that address for good, in every brand that holds it. That includes emails about their own call, which an ordinary unsubscribe does not stop. The lead's record says why. A temporary bounce, such as a full mailbox, is left alone: Amazon tries again by itself. Amazon reports to `/api/ses`, which stays switched off until the topic's name is set (`FRANOS_SES_TOPIC_ARN`) and then only acts on messages carrying Amazon's own signature for that topic. Built and tested against pretend reports; it gets connected to Amazon when franOS is hosted, because Amazon needs a public address to report to.
 
 **Call emails** are separate: on booking, then 3 days, 1 day, 12 hours, 1 hour and 10 minutes before. Someone who has not read the prospectus is pointed at it; someone who has is pointed at Next steps and Questions.
 
@@ -175,4 +177,4 @@ The menu runs down the left-hand side as icons, with their names beside them on 
 | The internet | Runs at `localhost:3000` on Adam's computer |
 
 ## How it is checked
-217 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.
+231 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.

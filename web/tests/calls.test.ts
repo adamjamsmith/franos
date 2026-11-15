@@ -348,6 +348,17 @@ describe("reminders", () => {
     const sequence = await sendDueEmails(db, seed.refresh, deps.deliver, at("2026-03-05T10:00:00Z"));
     expect(sequence.sent).toBe(0);
   });
+
+  it("never reach a lead whose address bounced or who pressed spam, though the team is still told", async () => {
+    const leadId = await newLead("dana@example.test");
+    await admin.update(leads).set({ emailBlockedAt: now, emailBlockedReason: "bounce" }).where(eq(leads.id, leadId));
+    outbox = [];
+
+    await book(leadId, wed14);
+    await runDueJobs(db, handlers(at("2026-03-03T14:00:00Z")), at("2026-03-03T14:00:00Z"));
+    expect(subjectsTo("dana@example.test")).toEqual([]);
+    expect(subjectsTo(mike.email).length).toBeGreaterThan(0);
+  });
 });
 
 describe("after the call", () => {
@@ -454,6 +465,21 @@ describe("who can see and change calls", () => {
     // The other brand's times are untouched by this booking.
     const ovenSlots = await withSession(db, siteSession(oven.id), (tx) => slotsOnOffer(tx, oven, now));
     expect(ovenSlots[1].slots.map(ukTime)).toContain("10:00am");
+  });
+
+  it("keeps the lead's own browser with the Schedule event, and never a member of staff's", async () => {
+    const browser = { userAgent: "Mozilla/5.0", ip: "203.0.113.9" };
+    const scheduleOf = async (leadId: string) =>
+      (await admin.select().from(metaEvents).where(eq(metaEvents.leadId, leadId))).find((e) => e.eventName === "Schedule")!.payload as Record<string, unknown>;
+
+    const self = await newLead("self@example.test");
+    await bookCall(db, site(), seed.refresh, deps, { leadId: self, startsAt: tue10, by: "lead", now, client: browser });
+    expect(await scheduleOf(self)).toMatchObject(browser);
+
+    const byStaff = await newLead("staff-booked@example.test");
+    await bookCall(db, as("consultant"), seed.refresh, deps, { leadId: byStaff, startsAt: tue11, by: "staff", now, client: browser });
+    expect(await scheduleOf(byStaff)).not.toHaveProperty("userAgent");
+    expect(await scheduleOf(byStaff)).not.toHaveProperty("ip");
   });
 
   it("lets a consultant manage calls, and the client role only read them", async () => {

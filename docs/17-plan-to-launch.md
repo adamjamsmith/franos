@@ -35,11 +35,11 @@ From `11-your-setup-checklist.md`. These are the critical path, because email ap
 |---|---|---|
 | C1 | Move franOS from this computer to AWS and Neon, with test and live copies, backups and alerts | B2, B3 |
 | C1a | Switch the media store to AWS file storage, with video served from Amazon's network, and copy across the files uploaded so far | B2, C1 |
-| C2 | Real email through Amazon SES: sending, bounces, spam complaints, and closing the "could send twice" gap. **Handling bounce and complaint notifications must be built before any real email goes out: the request to Amazon says franOS will do it** | B1, B2 |
+| C2 | Real email through Amazon SES: sending, bounces, spam complaints, and closing the "could send twice" gap. **Bounce and complaint handling built 15 Nov** (decision 106), tested against pretend reports. Still to do once franOS is hosted, and before any real email goes out: create the topic in AWS, point it at `/api/ses`, set `FRANOS_SES_TOPIC_ARN`, and send to Amazon's test bounce and complaint addresses to see a lead stopped | B1, B2 |
 | C3 | Start the email warm-up at a low daily limit | C2 |
 | C4 | **Zoom connected 15 Nov:** booking, moving and cancelling a call create, move and delete a real Zoom meeting, and attendance is read back afterwards (tested on Adam's computer). Still to do: collect recordings and transcripts once on Pro, with a later second look because Zoom can take a while to process them; keep the recordings in franOS's own storage; receive Zoom's "recording ready" message once franOS is hosted; make the brand's consultant the host | B4, C1 |
 | C5 | Connect Mike's calendar so franOS sees his other appointments | Mike's Google or Microsoft account |
-| C6 | **Meta sender built 15 Nov, test mode only:** a test Lead and a test Schedule reached Meta's Test events tab. Still to do: the browser pixel on the public pages, capturing the browser at booking as well as sign-up, and switching each brand to live at go-live with Adam's approval | B5 |
+| C6 | **Meta sender built 15 Nov, test mode only:** a test Lead and a test Schedule reached Meta's Test events tab. The browser is captured at booking as well as sign-up (15 Nov), so Schedule is a website event when the lead books it themselves. Still to do: the browser pixel on the public pages, and switching each brand to live at go-live with Adam's approval | B5 |
 | C7 | Switch on Cloudflare Turnstile on the form | B1 |
 
 ### D. Content (Adam, with the content agents)

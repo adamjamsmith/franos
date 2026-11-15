@@ -53,6 +53,10 @@ function describe(type: string, data: Record<string, unknown>, videoTitle: (id: 
       return `Clicked a link in the email (${data.emailKey}) to ${data.to}`;
     case "unsubscribed":
       return "Unsubscribed from emails";
+    case "email_bounced":
+      return "Email bounced: the address does not work. No more emails";
+    case "email_complaint":
+      return "Marked an email as spam. No more emails";
     case "call_booked":
       return `Call booked for ${callTime(data)}${data.by === "staff" ? " (booked by the team)" : ""}`;
     case "call_rescheduled":
@@ -206,8 +210,12 @@ export async function LeadPanel({ slug, leadId, base, query, access, brief }: Pr
   const act = "text-xs text-neutral-500 underline-offset-2 hover:text-neutral-900 hover:underline dark:text-neutral-400 dark:hover:text-neutral-100";
   const plus = `self-stretch border-l px-3 text-neutral-500 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 ${edge}`;
   const pill = "rounded-md border px-2.5 py-1 text-xs hover:bg-neutral-100 dark:hover:bg-neutral-900 " + edge;
-  const nextEmailText = lead.unsubscribedAt
-    ? "Unsubscribed. No emails."
+  const nextEmailText = lead.emailBlockedAt
+    ? lead.emailBlockedReason === "complaint"
+      ? "Marked as spam. No emails."
+      : "Email bounced. No emails."
+    : lead.unsubscribedAt
+      ? "Unsubscribed. No emails."
     : nextEmail
       ? `"${nextEmail.subject.replaceAll("{first_name}", lead.firstName ?? "").replaceAll("{brand}", client.name)}" · ${nextEmailWhen(nextEmail.at, now)}${nextEmail.kind === "reaction" || nextEmail.kind === "nudge" ? ` · ${nextEmail.kind === "reaction" ? "reaction" : "nudge"}: ${nextEmail.reason}` : ""}`
       : "None lined up.";
