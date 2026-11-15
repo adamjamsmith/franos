@@ -95,10 +95,13 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
           <Field label="Headline">
             <input name="headline" required defaultValue={site.headline} className={inputClass} />
           </Field>
-          <Field label="Sub-headline">
-            <textarea name="subheadline" rows={2} defaultValue={site.subheadline} className={inputClass} />
+          <Field label="Ticks under the headline (one per line, three is best)">
+            <textarea name="ticks" rows={3} defaultValue={site.ticks.join("\n")} className={inputClass} />
           </Field>
-          <Field label="Requirements (one per line; shown as 'This is for you if')">
+          <Field label="Prospectus picture address (shown beside the headline)">
+            <input name="prospectusImage" defaultValue={site.prospectusImage} className={inputClass} />
+          </Field>
+          <Field label="Who it is for (one per line; shown to the consultant after a call)">
             <textarea name="requirements" rows={4} defaultValue={site.requirements.join("\n")} className={inputClass} />
           </Field>
           <Field label="Thank-you heading (use {first_name} for their name)">
@@ -115,6 +118,14 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
               name="videos"
               rows={4}
               defaultValue={site.videos.map((v) => [v.title, v.person ?? "", v.url, ...(v.offerChat === false ? ["no chat"] : [])].join(" | ")).join("\n")}
+              className={inputClass}
+            />
+          </Field>
+          <Field label="Proof images (one per line: Image address | Caption). Leave the address out for a placeholder box">
+            <textarea
+              name="proofImages"
+              rows={3}
+              defaultValue={site.proofImages.map((image) => [image.url, ...(image.caption ? [image.caption] : [])].join(" | ")).join("\n")}
               className={inputClass}
             />
           </Field>
@@ -135,6 +146,15 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
           </Field>
           <Field label="Privacy notice">
             <textarea name="privacyText" rows={6} defaultValue={site.privacyText} className={inputClass} />
+          </Field>
+          <Field label="Terms and conditions">
+            <textarea name="termsText" rows={4} defaultValue={site.termsText} className={inputClass} />
+          </Field>
+          <Field label="Company name, address and number (foot of every page)">
+            <textarea name="companyAddress" rows={2} defaultValue={site.companyAddress} className={inputClass} />
+          </Field>
+          <Field label="Earnings note (foot of every page)">
+            <textarea name="earningsNote" rows={2} defaultValue={site.earningsNote} className={inputClass} />
           </Field>
           <button className={`${buttonClass} self-start`}>Save public pages</button>
         </form>

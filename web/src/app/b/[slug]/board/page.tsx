@@ -9,7 +9,7 @@ import { calls, leads } from "@/db/schema";
 import { requireBrand } from "@/lib/session";
 import { siteFor } from "@/site/config";
 import { REASONS } from "@/work/outcomes";
-import { nextAction, placeLead, STAGES } from "@/work/stage";
+import { nextAction, placeLead, BOARD_STAGES } from "@/work/stage";
 import { reopen } from "../work-actions";
 
 const daysAgo = (date: Date, now: Date) => {
@@ -45,7 +45,7 @@ export default async function BoardPage({ params, searchParams }: PageProps<"/b/
   }));
   const waiting = cards.filter((c) => c.placed.waitingForOutcome && c.placed.stage !== "closed");
   const closed = cards.filter((c) => c.placed.stage === "closed");
-  const notYet = cards.filter((c) => c.placed.stage === "lead").length;
+  const goodFit = cards.filter((c) => c.placed.stage === "goodfit").length;
 
   if (query.closed) {
     return (
@@ -86,24 +86,22 @@ export default async function BoardPage({ params, searchParams }: PageProps<"/b/
   return (
     <div className="flex flex-col gap-5">
       {waiting.length > 0 && (
-        <section className="rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950 dark:text-amber-100">
-          <span className="font-semibold">
-            {waiting.length} call{waiting.length === 1 ? "" : "s"} waiting for &quot;How did it go?&quot;:
-          </span>{" "}
+        <p className="rounded-md bg-amber-500/15 px-3 py-2 text-sm">
+          <span className="font-medium">Outcome needed:</span>{" "}
           {waiting.map(({ lead, name }, i) => (
             <span key={lead.id}>
-              {i > 0 && ", "}
+              {i > 0 && " · "}
               <Link href={`/b/${slug}/board?lead=${lead.id}`} scroll={false} className="underline">
                 {name}
               </Link>
             </span>
           ))}
-        </section>
+        </p>
       )}
 
       <div className="-mx-4 overflow-x-auto px-4 md:mx-0 md:overflow-visible md:px-0">
-        <div className="grid min-w-[44rem] grid-cols-5 gap-2 md:min-w-0">
-          {STAGES.map((stage) => {
+        <div className="grid min-w-[36rem] grid-cols-4 gap-2 md:min-w-0">
+          {BOARD_STAGES.map((stage) => {
             const inColumn = cards.filter((c) => c.placed.stage === stage.key);
             return (
               <section key={stage.key} className="rounded-lg bg-neutral-100 p-2 dark:bg-neutral-900">
@@ -125,7 +123,7 @@ export default async function BoardPage({ params, searchParams }: PageProps<"/b/
                         </span>
                         <span className="mt-1 flex flex-wrap gap-1">
                           {placed.missedCall && <span className="rounded bg-red-100 px-1.5 text-xs font-medium text-red-900">Missed call</span>}
-                          {placed.waitingForOutcome && <span className="rounded bg-amber-100 px-1.5 text-xs font-medium text-amber-900">How did it go?</span>}
+                          {placed.waitingForOutcome && <span className="rounded bg-amber-100 px-1.5 text-xs font-medium text-amber-900">Outcome needed</span>}
                           {placed.goodCall && <span className="rounded bg-green-100 px-1.5 text-xs font-medium text-green-900">Good call</span>}
                         </span>
                         {placed.nextCall && <span className="mt-1 block text-xs text-neutral-600 dark:text-neutral-400">Call: {ukWhen(placed.nextCall)}</span>}
@@ -149,11 +147,10 @@ export default async function BoardPage({ params, searchParams }: PageProps<"/b/
       </div>
 
       <p className="text-sm text-neutral-500">
-        Only opportunities are shown: leads with a Fit score of {goodFitFrom} or more, and anyone who has booked a call.{" "}
-        <Link href={`/b/${slug}`} className="underline">
-          {notYet} other lead{notYet === 1 ? "" : "s"}
+        <Link href={`/b/${slug}?list=goodfit`} className="underline">
+          Good fit, no call yet ({goodFit})
         </Link>{" "}
-        · {" "}
+        ·{" "}
         <Link href={`/b/${slug}/board?closed=1`} className="underline">
           Not going ahead ({closed.length})
         </Link>

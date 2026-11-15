@@ -8,9 +8,9 @@ franOS runs on Adam's computer only. Nothing is live. Email goes to a test mailb
 One system for every brand. Each brand has its own public pages, form, emails, calls and leads, and nobody in one brand can see another's. People log in with an emailed code plus an authenticator code. An owner sees every brand; a client or consultant sees their own.
 
 ## What a lead goes through
-1. **Landing page.** Headline, requirements, testimonials and the sign-up form.
+1. **Homepage.** The headline and three ticks on the left with a picture of the prospectus on the right, the sign-up form headed "Download the prospectus", then the testimonials and proof images.
 2. **Form.** Contact details, the avatar questions as tick-one circles, one required consent tick. A mistake keeps everything typed and marks the wrong box red. The answers give a **Fit score** out of 100. Someone who completes the form but misses a must-have answer sees "Thanks for your interest" and goes no further (see The form, below).
-3. **Thank-you page.** Text, the introduction video, and Schedule a call.
+3. **Thank-you page.** Text, the introduction video with the calendar straight under it, then the testimonials and proof images.
 4. **Prospectus email,** at once.
 5. **Emails,** one a day at most (see below).
 6. **Booking.** A calendar like Calendly: pick a day, pick a time, Next, check name and email, Book call. Only people who have filled in the form can book.
@@ -19,6 +19,41 @@ One system for every brand. Each brand has its own public pages, form, emails, c
 9. **Signed,** or not going ahead.
 
 franOS records every step on the lead: pages opened, video watched and how far, emails sent, opened and clicked, calls, and what happened on them. From that it knows each lead's **path** (introduction video, prospectus, call, Next steps, Questions) and their **next step**: the first of prospectus, call, Next steps, Questions they have not done.
+
+## The public pages
+The homepage, the thank-you page and each video page share **one layout**, a single centred column. Only the top block differs:
+
+| Page | Top block |
+|---|---|
+| Homepage | Headline and three ticks (two thirds), a picture of the prospectus (one third), then the form |
+| Thank-you | Text, the introduction video, the calendar |
+| Video page | Its title, the video, the calendar (or the form, for a visitor who has not signed up) |
+
+Under that, every page has each testimonial (title, video, button) and then the proof images in columns of mixed shapes (and the button again). Proof images are set under Settings > Brand and pages, one per line with an optional caption; a line with no address shows as a placeholder box that says what picture will go there. A new brand starts with three ticks, three placeholder testimonials (A, B and C franchisee), seven placeholder proof boxes and a placeholder for the prospectus picture.
+
+**Look.** There is no header. The page background is a light tint of the brand's colour, the footer a slightly deeper tint, and the form and calendar boxes are white.
+
+**Footer,** on every public page: the brand's name or logo; the company's name, address and number; the earnings note ("Any earnings figures shown are projections based on the performance of existing franchisees. They are not a guarantee of what you will earn."); links to the privacy notice and the terms and conditions; and the copyright line with the year. The address, the earnings note and the terms are set under Settings > Brand and pages.
+
+**The button asks for the visitor's next step.**
+
+On the homepage the button is always "Download the prospectus" and goes to the form, whoever is looking. On the thank-you and video pages:
+
+1. Not signed up: "Download the prospectus", which goes to the form.
+2. Signed up, prospectus not read: "Download the prospectus", which opens it.
+3. Prospectus read, no call: "Schedule a call", which goes to the calendar.
+4. Call booked: "Download next steps". The questions are reached from there.
+
+## Media
+The owner adds a brand's pictures, videos and PDFs under **Settings > Media**. Each file gets an address that starts with `/media/`; "Copy address" copies it, to paste into the settings box that needs it (logo, prospectus picture, proof images, videos, documents, email pictures).
+
+- **What can be added:** pictures (PNG, JPG, WebP, GIF) up to 25 MB, PDFs up to 50 MB, videos (MP4, WebM, MOV) up to 2 GB. SVG pictures are refused because they can carry scripts.
+- **Who can see what:** only the owner can add or remove a file, and one brand never sees another's list. The files themselves are public to anyone with the address, because they are what the public pages and emails show.
+- **Videos** are sent in the pieces the player asks for, so skipping forward works.
+- **In emails,** an address that starts with `/` has the site put in front of it, so the picture shows in the reader's inbox.
+- **Removing a file** is for good. Anything still using its address shows nothing.
+
+Today the files are kept in a folder on Adam's computer, beside the local database and outside version history. When franOS moves to AWS, only the one file that reads and writes them changes (`src/media/store.ts`).
 
 ## The form
 The owner sets the questions under **Settings > Form**. It is one tight table, laid out from Adam's sketch: a row per question that opens to show its answers; each answer has a score (Great, OK or Poor) and an asterisk that goes green when it is a must-have; rows are dragged to reorder; the last row adds a new one. Changes are held on screen until Save is pressed.
@@ -44,38 +79,63 @@ Every email's call to action follows the lead's next step. Nothing goes between 
 **Layouts.** Five, chosen per email: Header, Header + video, Header + owner photo, No header, and Personal (plain, as if typed by the consultant). Reactions and nudges are Personal. A new brand starts with 24 named sequence emails (VT1 Short, VT2 Short, Funding...) with placeholder wording.
 
 ## Working the leads
-**The board** shows opportunities only: leads with a Fit score of 70 or more, and anyone who has booked a call. Leads who didn't qualify are never on it.
+**The board** shows opportunities only: anyone who has booked a call. Good-fit leads with no call yet are not on it; they are a list on the Leads screen. Leads who didn't qualify are on neither.
 
 | Column | Means | How a lead gets there |
 |---|---|---|
-| Good fit | Scored well, no call booked. Worth calling | By itself |
 | Call scheduled | Has a call coming up | By itself |
 | Interested | Has had a call and is still in play | By itself |
 | Closing | More than interested, needs regular follow-up | Moved by hand |
 | Signed | Signed | Marked by hand |
 
-Clicking a card opens the lead in a pop-up with three tabs: **Opportunity** (what to do next, calls, what they have seen, notes, how it ends), **Form** (answers, Fit score, consent) and **Activity** (everything that has happened).
+Clicking a card opens the lead in a pop-up. At the top, under their name and contact details, is the **progress meter**:
+
+- **Fit:** the Fit score, tinted green at the brand's good-fit score or more, amber from 40, red below.
+- **Interest:** how many of the four things a lead does themselves are done (prospectus, booking a call, Next steps, Questions), with a word. Cold is none. Warm is prospectus and booking. Hot is both plus Next steps or Questions. Anything else is Warming.
+- **Intro video and Testimonials:** how far through the introduction video they got, and how many testimonials they watched at least half of. These are for information; they are not in the Interest count.
+- **Timeline,** one row of five boxes, each with a count or a word and a date under it:
+
+| Box | Says | Under it |
+|---|---|---|
+| Prospectus | How many times it was opened | When it was last opened |
+| Booking | How many calls they have booked (cancelled ones left out) | The date and time of the call coming up, or when the last one was. This is the one place on the meter the time is shown |
+| Next steps | How many times it was opened | When it was last opened |
+| Questions | How many times it was opened | When it was last opened |
+| Call | Not yet, Due, Attended, Good call, Not a good call, No-show | The date, or "Outcome needed" |
+
+A box is tinted green when done, amber when waiting on us, red when missed, and left plain when nothing has happened. The next step has a bright border. Signed is not on the timeline: the stage beside the lead's name already says it.
+
+Below the meter are three tabs: **Opportunity** (what to do next, calls, the next email, notes, how it ends; laid out as tight tables like the meter), **Form** (answers, Fit score, consent) and **Activity** (everything that has happened).
 
 **After every call** the consultant answers six questions: budget, authority, need, timing, whether they are the kind of person we want, and what happens next. franOS works out **good call** from them: all four yes, and the right kind of person. A lead ends as **Signed** or **Not going ahead** with a reason from a fixed list.
 
 **A new good-fit lead** triggers a "call now" email to the consultant, between 8am and 8pm.
 
 ## The numbers
-For any period: leads, calls booked, calls that happened (with show rate), good calls and signings, what each cost, and cost per signing in green or red against the brand's target. Broken down by ad and by Fit score. Ad spend is typed in per month.
+For any period, four KPIs, top to bottom. Each has how many, what each one cost, and what share of the step before it turned into:
+
+| KPI | Number | Conversion is a share of |
+|---|---|---|
+| Leads | People who signed up and qualified | Times the sign-up form was seen |
+| Booked | Calls booked (with the share who attended shown small under it) | Leads |
+| Good calls | Calls that passed the six questions | Booked |
+| Signed | Signings | Good calls |
+
+The cost of a signing is tinted green or red against the brand's target. With no ad spend entered for the dates, costs show as a dash, not £0. A conversion based on fewer than ten is greyed. Below are the same four counts by ad and by Fit score, and the ad spend, typed in per month.
 
 ## Where things are on screen
 | Menu | Screen | What it is for |
 |---|---|---|
-| **Work the leads** | Board | Opportunities by stage |
-| | Leads | Everyone who has signed up |
-| | Calls | Upcoming and past calls, show rate |
-| **How it is going** | Numbers | Against target; Form drop-off inside it |
+| **Work the leads** | Board | Opportunities by stage, from Call scheduled to Signed |
+| | Leads | Switches between All and Good fit (scored well, no call yet: the people worth ringing). A search box finds a lead by name, email or phone. Each row has the phone number, which rings it when clicked. Clicking a name opens a brief box with their contact details and the progress meter; "View lead" in it opens the full lead |
+| | Calls | Switches between Calendar and List. The calendar is a month of every call, paged with ‹ Today ›; the list shows upcoming calls soonest first, then past calls most recent first. Each call is a chip on its day: grey booked, amber outcome needed, green good call, red no-show or not a good call, struck through cancelled. Clicking one opens the lead pop-up, where the call is managed. Show rate at the top |
+| **How it is going** | Numbers | The four KPIs; Form drop-off inside it |
 | **Set it up** | Emails | Every email, in five folders |
-| | Settings | Brand and pages · Form · Calls · Emails · People |
+| | Settings | Brand and pages · Form · Media · Calls · Emails · People |
 
-Every setting lives under Settings. Ad spend is the one exception: it is on Numbers, because it is typed in monthly alongside the figures it feeds.
+Emails and Settings are in the menu for the owner only; a consultant or client sees Board, Leads, Calls and Numbers. Every setting lives under Settings. Ad spend is the one exception: it is on Numbers, because it is typed in monthly alongside the figures it feeds.
 
-"View site" in the top bar opens the brand's public page. Logged in, the public pages show a strip to switch which lead you are viewing as.
+The menu runs down the left-hand side as icons, with their names beside them on a wide screen; the three groups are separated by thin lines. View site, Switch brand and Log out sit at the bottom of it. "View site" opens the brand's public page. Logged in, the public pages show a strip to switch which lead you are viewing as.
 
 ## What is a stand-in today
 | Real thing | Today |
@@ -87,4 +147,4 @@ Every setting lives under Settings. Ad spend is the one exception: it is on Numb
 | The internet | Runs at `localhost:3000` on Adam's computer |
 
 ## How it is checked
-155 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.
+189 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.

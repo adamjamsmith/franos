@@ -11,8 +11,10 @@ export const STAGES: { key: Exclude<Stage, "lead" | "closed">; label: string; me
   { key: "closing", label: "Closing", meaning: "More than interested. Needs regular follow-up. Moved here by hand." },
   { key: "signed", label: "Signed", meaning: "Signed." },
 ];
+/** The board's columns. Good-fit leads with no call are worked from the Leads screen, not the board. */
+export const BOARD_STAGES = STAGES.filter((stage) => stage.key !== "goodfit");
 export const STAGE_NAMES: Record<Stage, string> = {
-  lead: "Lead (not on the board yet)",
+  lead: "Lead",
   goodfit: "Good fit",
   scheduled: "Call scheduled",
   interested: "Interested",

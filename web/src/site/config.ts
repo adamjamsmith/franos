@@ -6,6 +6,11 @@
 /** `offerChat: false` keeps a testimonial out of the "Want to talk to this person?" email. */
 export type Video = { id: string; title: string; person?: string; url: string; offerChat?: boolean };
 export type DocKind = "prospectus" | "next-steps" | "questions";
+/**
+ * A picture that backs up the offer: earnings, reviews, franchisees at work. Shown near the bottom of every public page.
+ * With no address it is a placeholder: a box that says what picture will go there.
+ */
+export type ProofImage = { url: string; caption?: string };
 
 /** Who a brand's emails come from, when they go, and how many may go in a day. */
 export type EmailSettings = {
@@ -58,16 +63,26 @@ export type SiteContent = {
   logoUrl: string;
   headline: string;
   subheadline: string;
-  /** Stated plainly on the landing page, to put off people who are not a fit. */
+  /** The three short selling points under the homepage headline, each with a tick. */
+  ticks: string[];
+  /** A picture of the prospectus, shown beside the homepage headline. Empty shows a placeholder box. */
+  prospectusImage: string;
+  /** Who the franchise is for. Shown to the consultant beside "the kind of person we want" after a call. */
   requirements: string[];
   thankYouHeading: string;
   thankYouText: string;
   vslUrl: string;
   videos: Video[];
+  proofImages: ProofImage[];
   documents: Record<DocKind, { title: string; url: string }>;
   consentWording: string;
   whatsappWording: string;
   privacyText: string;
+  termsText: string;
+  /** The company's name, address and registration number, for the foot of every page. */
+  companyAddress: string;
+  /** The note at the foot of every page about any earnings figures shown. */
+  earningsNote: string;
 };
 
 /** How good an answer is for this brand. Great counts 2, OK counts 1, Poor counts 0. */
@@ -95,7 +110,9 @@ export function defaultSite(brandName: string): SiteContent {
     primaryColour: "#1f6f4a",
     logoUrl: "",
     headline: `Build your own ${brandName} business`,
-    subheadline: "Placeholder wording. Replace this with the brand's own headline in Settings.",
+    subheadline: "",
+    ticks: ["Marketing done for you", "Full funding available", "No experience required"],
+    prospectusImage: "",
     requirements: [
       "You have run a business, or managed a team or budget",
       "You have the investment and six months of living costs",
@@ -104,7 +121,20 @@ export function defaultSite(brandName: string): SiteContent {
     thankYouHeading: "Thanks, {first_name}. Here is what to watch first",
     thankYouText: "Watch this short video on how the franchise works, then schedule a call.",
     vslUrl: "/placeholder.mp4",
-    videos: [{ id: "vt1", title: "Placeholder testimonial", person: "A franchisee", url: "/placeholder.mp4" }],
+    videos: [
+      { id: "vt1", title: "Placeholder testimonial", person: "A franchisee", url: "/placeholder.mp4" },
+      { id: "vt2", title: "Placeholder testimonial", person: "B franchisee", url: "/placeholder.mp4" },
+      { id: "vt3", title: "Placeholder testimonial", person: "C franchisee", url: "/placeholder.mp4" },
+    ],
+    proofImages: [
+      { url: "", caption: "Screenshot of a franchisee's monthly earnings" },
+      { url: "", caption: "Customer review" },
+      { url: "", caption: "Franchisee with their van or team" },
+      { url: "", caption: "Message from a franchisee" },
+      { url: "", caption: "Before and after photo of a job" },
+      { url: "", caption: "Award or accreditation" },
+      { url: "", caption: "Screenshot of a booked-up diary" },
+    ],
     documents: {
       prospectus: { title: "Franchise prospectus", url: "/placeholder-prospectus.pdf" },
       "next-steps": { title: "Next steps", url: "/placeholder-prospectus.pdf" },
@@ -113,6 +143,10 @@ export function defaultSite(brandName: string): SiteContent {
     consentWording: `I agree to ${brandName} contacting me by email and phone about this franchise, to calls being recorded and analysed, and to my details being shared with Meta to measure advertising. See the privacy notice.`,
     whatsappWording: "You can also message me on WhatsApp.",
     privacyText: "Placeholder privacy notice. The final wording is added after the legal check.",
+    termsText: "Placeholder terms and conditions. The final wording is added after the legal check.",
+    companyAddress: "Company name, registered address and company number go here.",
+    earningsNote:
+      "Any earnings figures shown are projections based on the performance of existing franchisees. They are not a guarantee of what you will earn.",
   };
 }
 

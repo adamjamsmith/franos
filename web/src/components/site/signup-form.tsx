@@ -168,7 +168,7 @@ export function SignUpForm({ slug, action, questions, consentWording, whatsappWo
         disabled={pending}
         className="rounded-md bg-[var(--brand)] px-5 py-3 text-base font-semibold text-white hover:opacity-90 disabled:opacity-60"
       >
-        {pending ? "Sending..." : "Send me the details"}
+        {pending ? "Sending..." : "Send me the prospectus"}
       </button>
     </form>
   );

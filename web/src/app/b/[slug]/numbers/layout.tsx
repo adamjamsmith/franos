@@ -7,7 +7,7 @@ export default async function NumbersLayout({ children, params }: LayoutProps<"/
     <div>
       <SubNav
         items={[
-          { href: `/b/${slug}/numbers`, label: "Against target" },
+          { href: `/b/${slug}/numbers`, label: "KPIs" },
           { href: `/b/${slug}/numbers/form`, label: "Form drop-off" },
         ]}
       />

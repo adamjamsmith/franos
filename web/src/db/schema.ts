@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+  bigint,
   bigserial,
   boolean,
   check,
@@ -392,4 +393,25 @@ export const adSpend = pgTable(
     createdAt: createdAt(),
   },
   (t) => [unique("ad_spend_client_month").on(t.clientId, t.month)],
+);
+
+/**
+ * A file a brand has uploaded: an image, a video or a PDF, for its public pages and emails.
+ * This is the record; the file itself is kept by the media store (src/media/store.ts) under the same id.
+ */
+export const media = pgTable(
+  "media",
+  {
+    id: id(),
+    clientId: clientId(),
+    /** The file's name as it was uploaded, shown in the list and used in its address. */
+    name: text("name").notNull(),
+    kind: text("kind").notNull(),
+    contentType: text("content_type").notNull(),
+    /** The ending the file is stored under, with its dot: ".png". */
+    extension: text("extension").notNull(),
+    sizeBytes: bigint("size_bytes", { mode: "number" }).notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [check("media_kind", sql`${t.kind} in ('image', 'video', 'document')`)],
 );

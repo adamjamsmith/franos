@@ -30,12 +30,12 @@ export function OutcomeBlock({
   const summary = saved && (
     <div className="text-sm">
       <p className="mb-1">
-        <span className={`rounded px-1.5 py-0.5 font-semibold ${call.goodCall ? "bg-green-100 text-green-900" : "bg-neutral-200 text-neutral-800"}`}>
+        <span className={`rounded px-1.5 py-0.5 text-xs font-medium text-neutral-900 dark:text-white ${call.goodCall ? "bg-green-500/20" : "bg-red-500/20"}`}>
           {call.goodCall ? "Good call" : "Not a good call"}
         </span>{" "}
-        · Next: {NEXT_MOVES[saved.next]}
+        <span className="text-xs text-neutral-500 dark:text-neutral-400">Next: {NEXT_MOVES[saved.next]}</span>
       </p>
-      <p className="text-neutral-600 dark:text-neutral-400">
+      <p className="text-xs text-neutral-500 dark:text-neutral-400">
         {BANT.map((b) => `${b.label}: ${ANSWERS[saved[b.key]]}`).join(" · ")} · Kind of person we want: {saved.rightPerson ? "Yes" : "No"}
       </p>
       {saved.notes && <p className="mt-1 whitespace-pre-line">{saved.notes}</p>}
@@ -66,7 +66,7 @@ export function OutcomeBlock({
 
   if (!saved) {
     return (
-      <div className="rounded-md border border-amber-300 bg-amber-50 p-3 dark:border-amber-700 dark:bg-amber-950">
+      <div className="rounded-md bg-amber-500/10 p-3">
         <p className="mb-2 text-sm font-semibold">How did it go? ({ukWhen(call.startsAt)})</p>
         {form}
       </div>
@@ -75,8 +75,8 @@ export function OutcomeBlock({
   return (
     <div>
       {summary}
-      <details className="mt-2 text-sm">
-        <summary className="cursor-pointer underline">Correct these answers</summary>
+      <details className="mt-1 text-sm">
+        <summary className="cursor-pointer text-xs text-neutral-500 underline-offset-2 hover:underline dark:text-neutral-400">Correct</summary>
         <div className="mt-3">{form}</div>
       </details>
     </div>

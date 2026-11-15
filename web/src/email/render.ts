@@ -221,8 +221,9 @@ ${openMarker}
   // ----- The styled template -----
   const button = (label: string, url: string, big: boolean) =>
     `<a href="${escapeHtml(url)}" target="_blank" style="background:${colour};color:#ffffff;text-decoration:none;font-weight:bold;display:inline-block;border-radius:10px;white-space:nowrap;${big ? "font-size:17px;padding:13px 30px" : "font-size:15px;padding:9px 18px"}">${escapeHtml(label)}</a>`;
+  const full = (address: string) => (address.startsWith("/") ? `${input.baseUrl}${address}` : address);
   const logo = site.logoUrl
-    ? `<img src="${escapeHtml(site.logoUrl)}" alt="${escapeHtml(input.brandName)}" height="40" style="display:block;height:40px;width:auto;border:0">`
+    ? `<img src="${escapeHtml(full(site.logoUrl))}" alt="${escapeHtml(input.brandName)}" height="40" style="display:block;height:40px;width:auto;border:0">`
     : `<strong style="font-size:18px;color:#1a1a1a">${escapeHtml(input.brandName)}</strong>`;
   const headerBar =
     layout === "plain"
@@ -231,7 +232,7 @@ ${openMarker}
   const headline = email.headline?.trim() ? `<h1 style="margin:0;padding:18px 24px 8px;font-size:26px;line-height:1.25;color:#1a1a1a">${escapeHtml(merge(email.headline))}</h1>` : "";
 
   // What sits under the headline: a video thumbnail with a watch button, a large owner photo, or an image above the wording.
-  const image = email.imageUrl?.trim() ?? "";
+  const image = full(email.imageUrl?.trim() ?? "");
   const video = email.videoId ? site.videos.find((v) => v.id === email.videoId) : undefined;
   let hero = "";
   let heroText = "";
@@ -259,7 +260,7 @@ ${openMarker}
   // "Have you watched it yet?": shown when the brand has an introduction video.
   const videoUrl = site.vslUrl ? trackedLink(input, "thank-you") : "";
   const videoBox = videoUrl
-    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f6f3;border-top:1px solid #e2e8e2"><tr>${settings.videoBoxImage ? `<td width="200" style="padding:16px 0 16px 24px"><a href="${escapeHtml(videoUrl)}" target="_blank"><img src="${escapeHtml(settings.videoBoxImage)}" alt="Watch the video" width="184" style="display:block;width:184px;height:auto;border:0;border-radius:6px"></a></td>` : ""}<td style="padding:16px 24px"><p style="margin:0 0 4px;font-size:17px;font-weight:bold;color:#1a1a1a">Have you watched it yet?</p><p style="margin:0 0 10px;font-size:14px;color:#333333">${escapeHtml(settings.videoBoxText?.trim() || `How a ${input.brandName} business works`)}</p>${button("▶  Watch the Video", videoUrl, false)}</td></tr></table>`
+    ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f6f3;border-top:1px solid #e2e8e2"><tr>${settings.videoBoxImage ? `<td width="200" style="padding:16px 0 16px 24px"><a href="${escapeHtml(videoUrl)}" target="_blank"><img src="${escapeHtml(full(settings.videoBoxImage))}" alt="Watch the video" width="184" style="display:block;width:184px;height:auto;border:0;border-radius:6px"></a></td>` : ""}<td style="padding:16px 24px"><p style="margin:0 0 4px;font-size:17px;font-weight:bold;color:#1a1a1a">Have you watched it yet?</p><p style="margin:0 0 10px;font-size:14px;color:#333333">${escapeHtml(settings.videoBoxText?.trim() || `How a ${input.brandName} business works`)}</p>${button("▶  Watch the Video", videoUrl, false)}</td></tr></table>`
     : "";
 
   const html = `${preheader}<div style="background:#eef1ee;padding:16px 0;${font}">

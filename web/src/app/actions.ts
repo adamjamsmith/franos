@@ -217,18 +217,25 @@ export async function updateSiteContent(form: FormData) {
     const offerChat = chat && /^no/i.test(chat) ? false : undefined;
     return [{ id: `vt${i + 1}`, title, person: person || undefined, url, ...(offerChat === false ? { offerChat } : {}) }];
   });
+  const proofImages = lines("proofImages").flatMap((line) => {
+    // A line with a caption and no address is a placeholder box.
+    const [url, caption] = line.split("|").map((part) => part.trim());
+    return url || caption ? [{ url: url ?? "", ...(caption ? { caption } : {}) }] : [];
+  });
   const colour = text(form, "primaryColour");
   const site: SiteContent = {
     ...current,
     primaryColour: /^#[0-9a-f]{6}$/i.test(colour) ? colour : current.primaryColour,
     logoUrl: text(form, "logoUrl"),
     headline: text(form, "headline") || current.headline,
-    subheadline: text(form, "subheadline"),
+    ticks: lines("ticks"),
+    prospectusImage: text(form, "prospectusImage"),
     requirements: lines("requirements"),
     thankYouHeading: text(form, "thankYouHeading") || current.thankYouHeading,
     thankYouText: text(form, "thankYouText"),
     vslUrl: text(form, "vslUrl"),
     videos,
+    proofImages,
     documents: {
       prospectus: { ...current.documents.prospectus, url: text(form, "doc_prospectus") },
       "next-steps": { ...current.documents["next-steps"], url: text(form, "doc_next-steps") },
@@ -237,6 +244,9 @@ export async function updateSiteContent(form: FormData) {
     consentWording: text(form, "consentWording") || current.consentWording,
     whatsappWording: text(form, "whatsappWording") || current.whatsappWording,
     privacyText: text(form, "privacyText"),
+    termsText: text(form, "termsText"),
+    companyAddress: text(form, "companyAddress"),
+    earningsNote: text(form, "earningsNote"),
   };
 
   await withSession(db, session, async (tx) => {

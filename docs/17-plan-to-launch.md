@@ -15,7 +15,7 @@ All four launch steps run on Adam's computer: capture, emails, calls, and workin
 | A3 | ~~Email layouts and the named starter library~~ **Done 14 Nov** (docs/18). The real wording is the copywriter's job (D4), not copied from GoHighLevel | |
 | A4 | **Emails on screen:** add, delete and reorder are done. Still to do: links to other websites, and editing the call emails | Nothing |
 | A5 | ~~Form questions on screen: edit the questions, mark answers Great, OK or Poor, set must-haves~~ **Done 15 Nov** (spec 19) | |
-| A6 | **Layouts and templates rework** of the public pages, once the flow is agreed (decision 55) | A session together on how they should look |
+| A6 | ~~Layouts and templates rework of the public pages~~ **Done 15 Nov:** homepage, thank-you and video pages on one layout (decisions 92 and 93). The prospectus, Next steps and Questions pages are unchanged | |
 
 ### B. Accounts only Adam can open (start now: some take days)
 From `11-your-setup-checklist.md`. These are the critical path, because email approval and warming up a new email domain cannot be rushed.
@@ -34,6 +34,7 @@ From `11-your-setup-checklist.md`. These are the critical path, because email ap
 | # | Job | Depends on |
 |---|---|---|
 | C1 | Move franOS from this computer to AWS and Neon, with test and live copies, backups and alerts | B2, B3 |
+| C1a | Switch the media store to AWS file storage, with video served from Amazon's network, and copy across the files uploaded so far | B2, C1 |
 | C2 | Real email through Amazon SES: sending, bounces, spam complaints, and closing the "could send twice" gap | B1, B2 |
 | C3 | Start the email warm-up at a low daily limit | C2 |
 | C4 | Connect the real Zoom; keep recordings in franOS's own storage | B4, C1 |
