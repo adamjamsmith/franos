@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // The local database (PGlite) ships its own binary files and must not be bundled.
-  serverExternalPackages: ["@electric-sql/pglite"],
+  serverExternalPackages: ["@electric-sql/pglite", "pg", "@aws-sdk/client-sesv2"],
   // Lets franOS be opened at 127.0.0.1 as well as localhost while it runs on this computer (used for testing).
   allowedDevOrigins: ["127.0.0.1"],
   turbopack: {

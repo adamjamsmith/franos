@@ -1,7 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { adminDb, appDb } from "../db";
 import { clients, memberships, users } from "../db/schema";
-import { mailboxDeliver } from "../email/deliver";
+import { deliverMail } from "../email/deliver";
 import { runDueJobs } from "../jobs/runner";
 import type { Brand, CallDeps, Staff } from "./calls";
 import { callJobHandlers } from "./jobs";
@@ -42,7 +42,7 @@ export function meetingProvider(): MeetingProvider {
  * emails become Amazon SES.
  */
 export async function appCallDeps(brand: Pick<Brand, "id">): Promise<CallDeps> {
-  return { deliver: mailboxDeliver, provider: meetingProvider(), staff: await staffFor(brand.id) };
+  return { deliver: deliverMail, provider: meetingProvider(), staff: await staffFor(brand.id) };
 }
 
 /** Runs every piece of timed work that is due: reminders, held alerts, collecting finished calls. Run once a minute. */

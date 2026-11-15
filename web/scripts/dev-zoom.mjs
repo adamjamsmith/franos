@@ -43,10 +43,24 @@ try {
   metaToken = "";
 }
 
-console.log(`Zoom codes loaded from AWS${metaToken ? ", and the Meta token" : ""}. Starting franOS connected.`);
+// Only when asked (FRANOS_HOSTED_DB=1): use the hosted database on Neon in place of this computer's own.
+let databaseAddress = "";
+if (process.env.FRANOS_HOSTED_DB === "1") {
+  try {
+    databaseAddress = execFileSync(aws, ["ssm", "get-parameter", "--region", region, "--name", "/franos/db", "--with-decryption", "--query", "Parameter.Value", "--output", "text"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+  } catch {
+    console.error("Could not read the database address from AWS (/franos/db).");
+    process.exit(1);
+  }
+}
+
+console.log(`Zoom codes loaded from AWS${metaToken ? ", and the Meta token" : ""}. Starting franOS connected${databaseAddress ? ", on the hosted database" : ""}.`);
 const child = spawn("npx", ["next", "dev", ...process.argv.slice(2)], {
   stdio: "inherit",
   shell: process.platform === "win32",
-  env: { ...process.env, FRANOS_ZOOM_CREDENTIALS: credentials, ...(metaToken ? { FRANOS_META_TOKEN: metaToken } : {}) },
+  env: { ...process.env, FRANOS_ZOOM_CREDENTIALS: credentials, ...(metaToken ? { FRANOS_META_TOKEN: metaToken } : {}), ...(databaseAddress ? { FRANOS_DATABASE_URL: databaseAddress } : {}) },
 });
 child.on("exit", (code) => process.exit(code ?? 0));

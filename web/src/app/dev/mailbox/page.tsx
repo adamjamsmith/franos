@@ -31,7 +31,7 @@ export default function DevMailboxPage() {
                 className="h-96 w-full rounded-md border border-neutral-200 bg-white"
               />
             ) : (
-              <p className="font-mono text-2xl tracking-widest">{m.body}</p>
+              <p className="whitespace-pre-wrap text-sm">{m.body}</p>
             )}
           </li>
         ))}

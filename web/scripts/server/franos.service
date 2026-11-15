@@ -1,0 +1,22 @@
+[Unit]
+Description=franOS
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=franos
+Group=franos
+WorkingDirectory=/srv/franos/app
+EnvironmentFile=/etc/franos/env
+Environment=HOME=/srv/franos
+Environment=NEXT_TELEMETRY_DISABLED=1
+ExecStart=/usr/bin/npx next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=3
+# The settings file holds passwords; only root reads it and hands the values to franOS at start.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target

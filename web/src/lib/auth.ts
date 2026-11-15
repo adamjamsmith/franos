@@ -4,7 +4,7 @@ import { nextCookies } from "better-auth/next-js";
 import { emailOTP, twoFactor } from "better-auth/plugins";
 import { adminDb } from "../db";
 import { accounts, sessions, twoFactors, users, verifications } from "../db/schema";
-import { deliver } from "./dev-mailbox";
+import { deliverSystemMail } from "../email/deliver";
 
 async function build() {
   const db = await adminDb();
@@ -27,7 +27,9 @@ async function build() {
         disableSignUp: true,
         expiresIn: 600,
         async sendVerificationOTP({ email, otp }) {
-          deliver({ to: email, subject: "Your franOS login code", body: otp });
+          await deliverSystemMail({ to: email, subject: "Your franOS login code", body: `Your franOS login code is ${otp}
+
+It works for 10 minutes. If you did not ask for it, ignore this email.` });
         },
       }),
       // The authenticator-app code. franOS enforces it per session (see lib/session.ts).

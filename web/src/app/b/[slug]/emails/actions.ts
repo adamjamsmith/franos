@@ -4,7 +4,7 @@ import { and, asc, eq, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { withSession } from "@/db/context";
 import { auditLog, clients, emails, emailSends, leads } from "@/db/schema";
-import { mailboxDeliver } from "@/email/deliver";
+import { deliverMail } from "@/email/deliver";
 import { emailSettingsFor, isLayout } from "@/email/render";
 import { addStarterEmails, buildEmail, sampleWords, sendDueEmails } from "@/email/send";
 import { isDev } from "@/lib/dev-mailbox";
@@ -87,7 +87,7 @@ export async function sendNow(form: FormData) {
   const days = isDev ? Number(text(form, "daysAhead")) || 0 : 0;
   const minutes = isDev ? Number(text(form, "minutesAhead")) || 0 : 0;
   const now = new Date(Date.now() + days * 86_400_000 + minutes * 60_000);
-  const { sent, held } = await sendDueEmails(db, client, mailboxDeliver, now);
+  const { sent, held } = await sendDueEmails(db, client, deliverMail, now);
   redirect(`/b/${client.slug}/emails?sent=${sent}&held=${held}`);
 }
 
@@ -107,7 +107,7 @@ export async function sendTest(form: FormData) {
   });
   if (rendered) {
     const settings = emailSettingsFor(client.name, siteFor(client));
-    await mailboxDeliver({
+    await deliverMail({
       ...rendered,
       subject: `[Test] ${rendered.subject}`,
       to: "test mailbox",

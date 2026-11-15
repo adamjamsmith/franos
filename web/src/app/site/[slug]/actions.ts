@@ -10,7 +10,7 @@ import { appDb } from "@/db";
 import { withSession } from "@/db/context";
 import { calls } from "@/db/schema";
 import { sign, signatureOk } from "@/email/render";
-import { mailboxDeliver } from "@/email/deliver";
+import { deliverMail } from "@/email/deliver";
 import { sendDueEmails } from "@/email/send";
 import { knownLeadId, publicBrand, rememberLead } from "@/site/brand";
 import { formFor } from "@/site/config";
@@ -92,7 +92,7 @@ export async function submitSignUp(_previous: SignUpState, form: FormData): Prom
 
   // Send the prospectus email straight away. A problem here must never stop the sign-up itself.
   try {
-    await sendDueEmails(await appDb(), brand, mailboxDeliver, new Date(), result.leadId);
+    await sendDueEmails(await appDb(), brand, deliverMail, new Date(), result.leadId);
   } catch (error) {
     console.error("Could not send the prospectus email", error);
   }
