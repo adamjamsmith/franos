@@ -61,6 +61,8 @@ franOS tells Meta when a lead signs up, books a call, has a good call and signs,
 - **Each event has a fixed id,** so Meta counts it once even if it is sent twice.
 - **The Lead and Schedule events include the visitor's browser and address,** captured at sign-up and when the lead books a call on the public page. Meta needs these to treat them as website events, which is what the ads optimise for. The consent tick covers this. A call booked by staff inside franOS goes as a system event, never as a website visit.
 - Events are sent once a minute, alongside the emails and the call reminders.
+- **The ad's click code.** When someone arrives from an ad, the link carries Meta's click code. The landing page passes it into the form without setting a cookie, franOS keeps it with the lead, and every event for that lead carries it, so Meta can match the lead to the ad.
+- **The pixel.** Meta's browser script loads only for a lead who ticked consent wording that mentions cookies, on any page they look at after signing up. It reports the pages they view, and on the thank-you page the sign-up, with the same id the server uses so Meta counts it once. A new visitor gets no script and no Meta cookies, so there is no cookie banner. The team is never tracked. Before go-live it only loads if the brand has a test code. Unlike server events, browser events cannot carry a test code, so before go-live a brand must only ever be given a test dataset.
 
 ## Zoom
 franOS talks to Zoom through a private app ("franos", a Server-to-Server OAuth app) on Franchise Right's own Zoom account, which Adam owns. Consultants are users on that account, on whatever email they have.
@@ -180,4 +182,4 @@ The menu runs down the left-hand side as icons, with their names beside them on 
 | The internet | Runs at `localhost:3000` on Adam's computer |
 
 ## How it is checked
-237 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.
+251 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.

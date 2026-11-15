@@ -1,3 +1,4 @@
+import { clickCode } from "../meta/click";
 import { and, eq } from "drizzle-orm";
 import { type Db, type Session, withSession } from "../db/context";
 import { consents, leadEvents, leads, metaEvents } from "../db/schema";
@@ -20,7 +21,9 @@ export type SignUpInput = {
   /** A hidden field real people never fill in. */
   honeypot: string;
   /** The visitor's browser and address, passed to Meta with the Lead event. Covered by the consent tick. */
-  client?: { userAgent?: string; ip?: string };
+  client?: { userAgent?: string; ip?: string; fbp?: string };
+  /** Meta's click code from the ad link (`fbclid`). Sent back to Meta with this lead's events so they match the ad. */
+  clickId?: string;
 };
 
 export type SignUpResult =
@@ -89,7 +92,7 @@ export async function registerLead(db: Db, brand: Brand, input: SignUpInput): Pr
     } else {
       const [created] = await tx
         .insert(leads)
-        .values({ clientId: brand.id, email, utm, qualified, ...values })
+        .values({ clientId: brand.id, email, utm: { ...utm, ...(clickCode(input.clickId) ? { fbc: clickCode(input.clickId) } : {}) }, qualified, ...values })
         .returning({ id: leads.id });
       leadId = created.id;
     }

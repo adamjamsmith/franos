@@ -181,7 +181,7 @@ export async function bookCall(
     by: "lead" | "staff";
     now?: Date;
     /** The lead's own browser and address, when they booked on the public page. Passed to Meta with the Schedule event. */
-    client?: { userAgent?: string; ip?: string };
+    client?: { userAgent?: string; ip?: string; fbp?: string };
   },
 ): Promise<BookResult> {
   const now = input.now ?? new Date();
@@ -245,6 +245,7 @@ export async function bookCall(
             // Only the lead's own browser counts. A call booked by staff is never passed off as a website visit.
             ...(input.by === "lead" && input.client?.userAgent ? { userAgent: input.client.userAgent.slice(0, 400) } : {}),
             ...(input.by === "lead" && input.client?.userAgent && input.client.ip ? { ip: input.client.ip.slice(0, 60) } : {}),
+            ...(input.by === "lead" && input.client?.fbp ? { fbp: input.client.fbp.slice(0, 100) } : {}),
           },
         })
         .onConflictDoNothing({ target: [metaEvents.clientId, metaEvents.eventId] });

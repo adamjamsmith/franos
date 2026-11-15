@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import type { CSSProperties } from "react";
+import { MetaPixel } from "@/components/site/meta-pixel";
 import { StaffBar } from "@/components/site/staff-bar";
 import { publicBrand } from "@/site/brand";
 import { siteFor } from "@/site/config";
@@ -27,6 +28,7 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/sit
   return (
     <div className="flex min-h-full flex-1 flex-col bg-[var(--brand-light)] text-neutral-900" style={colours}>
       <StaffBar slug={slug} />
+      <MetaPixel slug={slug} brand={brand} />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-10">{children}</main>
       <footer className="bg-[var(--brand-soft)] text-sm text-neutral-700">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 py-8">

@@ -1,7 +1,7 @@
 "use server";
 
 import { eq } from "drizzle-orm";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { speedAlert } from "@/calls/alert";
 import { bookCall, cancelCall } from "@/calls/calls";
@@ -12,6 +12,7 @@ import { calls } from "@/db/schema";
 import { sign, signatureOk } from "@/email/render";
 import { deliverMail } from "@/email/deliver";
 import { sendDueEmails } from "@/email/send";
+import { browserId } from "@/meta/click";
 import { knownLeadId, publicBrand, rememberLead } from "@/site/brand";
 import { formFor } from "@/site/config";
 import { registerLead, siteSession } from "@/site/leads";
@@ -24,7 +25,9 @@ const text = (form: FormData, key: string) => String(form.get(key) ?? "");
 async function visitor() {
   const sent = await headers();
   const ip = (sent.get("x-forwarded-for") ?? "").split(",")[0].trim();
-  return { userAgent: sent.get("user-agent") ?? "", ip: /^[0-9a-f.:]+$/i.test(ip) ? ip : "" };
+  // Meta's own browser cookie, there only for a lead who agreed to cookies and has since loaded the pixel.
+  const fbp = browserId((await cookies()).get("_fbp")?.value) ?? "";
+  return { userAgent: sent.get("user-agent") ?? "", ip: /^[0-9a-f.:]+$/i.test(ip) ? ip : "", fbp };
 }
 
 const KEPT = ["firstName", "lastName", "email", "phone", "postcode", "why", "consent", "whatsapp"];
@@ -75,6 +78,7 @@ export async function submitSignUp(_previous: SignUpState, form: FormData): Prom
     whatsapp: form.get("whatsapp") === "on",
     utm,
     honeypot: text(form, "company_website"),
+    clickId: text(form, "fbclid"),
     client: await visitor(),
   });
   if (!result.ok) {

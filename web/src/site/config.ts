@@ -147,7 +147,7 @@ export function defaultSite(brandName: string): SiteContent {
       "next-steps": { title: "Next steps", url: "/placeholder-prospectus.pdf" },
       questions: { title: "Questions to ask us", url: "/placeholder-prospectus.pdf" },
     },
-    consentWording: `I agree to ${brandName} contacting me by email and phone about this franchise, to calls being recorded and analysed, and to my details being shared with Meta to measure advertising. See the privacy notice.`,
+    consentWording: `I agree to ${brandName} contacting me by email and phone about this franchise, to calls being recorded and analysed, and to cookies and my details being used with Meta to measure and improve advertising. See the privacy notice.`,
     whatsappWording: "You can also message me on WhatsApp.",
     privacyText: "Placeholder privacy notice. The final wording is added after the legal check.",
     termsText: "Placeholder terms and conditions. The final wording is added after the legal check.",

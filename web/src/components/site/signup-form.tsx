@@ -19,6 +19,8 @@ type Props = {
   consentWording: string;
   whatsappWording: string;
   utm: Record<string, string>;
+  /** Meta's click code from the ad link, if the visitor came from an ad. */
+  clickId?: string;
   turnstileSiteKey: string;
 };
 
@@ -27,7 +29,7 @@ type Props = {
  * so drop-off can be measured. It never reports what was typed.
  * If something is wrong, everything typed stays in place and the wrong boxes turn red.
  */
-export function SignUpForm({ slug, action, questions, consentWording, whatsappWording, utm, turnstileSiteKey }: Props) {
+export function SignUpForm({ slug, action, questions, consentWording, whatsappWording, utm, clickId, turnstileSiteKey }: Props) {
   const [state, submit, pending] = useActionState(action, emptySignUp);
   const formRef = useRef<HTMLFormElement>(null);
   const thanksRef = useRef<HTMLDivElement>(null);
@@ -81,6 +83,7 @@ export function SignUpForm({ slug, action, questions, consentWording, whatsappWo
   return (
     <form ref={formRef} action={submit} className="flex flex-col gap-4" onInput={started}>
       <input type="hidden" name="slug" value={slug} />
+      {clickId ? <input type="hidden" name="fbclid" value={clickId} /> : null}
       {Object.entries(utm).map(([key, v]) => (
         <input key={key} type="hidden" name={`utm_${key}`} value={v} />
       ))}

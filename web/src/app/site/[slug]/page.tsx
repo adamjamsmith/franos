@@ -15,6 +15,8 @@ export default async function LandingPage({ params, searchParams }: PageProps<"/
     const value = query[`utm_${key}`];
     if (typeof value === "string" && value) utm[key] = value;
   }
+  // Meta adds a click code to an ad's link. It travels with the form, so the sign-up can be matched to the ad. No cookie is set.
+  const clickId = typeof query.fbclid === "string" ? query.fbclid : "";
   // On the homepage every button goes to the form, whoever is looking.
   const cta = { label: "Download the prospectus", href: "#sign-up" };
 
@@ -46,7 +48,7 @@ export default async function LandingPage({ params, searchParams }: PageProps<"/
           )}
         </div>
       </header>
-      <SignUpCard brand={brand} utm={utm} />
+      <SignUpCard brand={brand} utm={utm} clickId={clickId} />
       <Testimonials slug={slug} videos={site.videos} cta={cta} />
       <ProofImages images={site.proofImages} cta={cta} />
     </PageColumn>

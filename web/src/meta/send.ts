@@ -49,7 +49,7 @@ export function tidyPhone(phone: string): string {
   return digits;
 }
 
-type LeadLike = { id: string; email: string; phone: string | null; firstName: string | null; lastName: string | null; postcode: string | null };
+type LeadLike = { id: string; email: string; phone: string | null; firstName: string | null; lastName: string | null; postcode: string | null; utm?: unknown };
 type EventLike = { eventName: string; eventId: string; payload: unknown; createdAt: Date };
 
 /** One event, in the shape Meta expects. */
@@ -62,6 +62,10 @@ export function metaEvent(event: EventLike, lead: LeadLike, page: string) {
   // Meta only accepts a "website" event with the visitor's browser details. Without them it is sent as coming from our system.
   const browser = typeof payload.userAgent === "string" && payload.userAgent ? payload.userAgent : null;
   const value = typeof payload.value === "number" ? payload.value : null;
+  // The ad's click code is kept with the lead at sign-up, so every later event carries it too.
+  const clicked = (lead.utm ?? {}) as { fbc?: unknown };
+  const fbc = typeof clicked.fbc === "string" && clicked.fbc.startsWith("fb.1.") ? clicked.fbc : null;
+  const fbp = typeof payload.fbp === "string" && payload.fbp.startsWith("fb.") ? payload.fbp : null;
   return {
     event_name: META_NAMES[event.eventName] ?? event.eventName,
     event_time: Math.floor(event.createdAt.getTime() / 1000),
@@ -77,6 +81,8 @@ export function metaEvent(event: EventLike, lead: LeadLike, page: string) {
       zp: hashed(lead.postcode, (v) => v.toLowerCase().replace(/[^a-z0-9]/g, "")),
       country: [scramble("gb")],
       external_id: [scramble(lead.id)],
+      ...(fbc ? { fbc } : {}),
+      ...(fbp ? { fbp } : {}),
       ...(browser ? { client_user_agent: browser } : {}),
       ...(typeof payload.ip === "string" && payload.ip ? { client_ip_address: payload.ip } : {}),
     },

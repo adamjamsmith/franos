@@ -81,7 +81,7 @@ export function ProofImages({ images, cta }: { images: ProofImage[]; cta: Cta })
 }
 
 /** The sign-up form in its box, headed "Download the prospectus". */
-export function SignUpCard({ brand, utm = {} }: { brand: { slug: string; name: string; site: unknown; form: unknown }; utm?: Record<string, string> }) {
+export function SignUpCard({ brand, utm = {}, clickId = "" }: { brand: { slug: string; name: string; site: unknown; form: unknown }; utm?: Record<string, string>; clickId?: string }) {
   const site = siteFor(brand);
   return (
     <section id="sign-up" className="scroll-mt-4 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
@@ -93,6 +93,7 @@ export function SignUpCard({ brand, utm = {} }: { brand: { slug: string; name: s
         consentWording={site.consentWording}
         whatsappWording={site.whatsappWording}
         utm={utm}
+        clickId={clickId}
         turnstileSiteKey={turnstileSiteKey()}
       />
     </section>
