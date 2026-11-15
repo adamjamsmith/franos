@@ -27,12 +27,17 @@ function moved<T>(list: T[], from: number, to: number): T[] {
 }
 
 const line = "border-neutral-300 dark:border-neutral-700";
-const row = `grid grid-cols-[2.75rem_minmax(0,1fr)_7.5rem_2.75rem] items-stretch border-t ${line}`;
+const row = `grid grid-cols-[2.5rem_minmax(0,1fr)_7.5rem_2.5rem] items-stretch border-t text-sm ${line}`;
 const cell = `flex items-center justify-center border-l ${line}`;
-const textBox = "w-full bg-transparent px-3 py-2.5 text-center outline-none placeholder:text-neutral-400 focus:bg-white dark:focus:bg-neutral-950";
-const pick = "h-full w-full cursor-pointer bg-transparent px-2 text-center outline-none [text-align-last:center]";
-const iconButton = "flex h-full w-full items-center justify-center text-neutral-500 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100";
-const answerRow = `${row} bg-neutral-100 text-sm dark:bg-neutral-900`;
+const textBox = "w-full bg-transparent px-3 py-2 text-left outline-none placeholder:text-neutral-400 focus:bg-white dark:focus:bg-neutral-950";
+const pick = "h-full w-full cursor-pointer bg-transparent px-2 text-left outline-none dark:[color-scheme:dark]";
+/** The open drop-down list: solid background and strong text, so it reads in both themes. */
+const choice = "bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100";
+const iconButton = "flex h-full w-full items-center justify-center text-xs text-neutral-500 hover:bg-neutral-200 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-neutral-100";
+const questionRow = `${row} bg-white dark:bg-neutral-950`;
+const answerRow = `${row} bg-white dark:bg-neutral-950`;
+const entryRow = `${row} bg-neutral-100 dark:bg-neutral-900`;
+const typeCell = `flex items-center border-l px-3 text-neutral-500 ${line}`;
 const dropHere = "outline outline-2 -outline-offset-2 outline-neutral-900 dark:outline-neutral-100";
 
 /**
@@ -173,7 +178,7 @@ export function FormEditor({ slug, initial, picked, save }: Props) {
           return (
             <div key={q.id}>
               <div
-                className={`${row} font-semibold ${over === questionKey ? dropHere : ""}`}
+                className={`${questionRow} ${over === questionKey ? dropHere : ""}`}
                 draggable={grab?.kind === "question" && grab.id === q.id}
                 onDragOver={(e) => {
                   if (grab?.kind !== "question") return;
@@ -184,7 +189,7 @@ export function FormEditor({ slug, initial, picked, save }: Props) {
                 onDragEnd={endDrag}
               >
                 <div
-                  className={`flex cursor-grab items-center justify-center ${onForm(q) ? "" : "text-amber-600"}`}
+                  className={`flex cursor-grab items-center justify-center ${onForm(q) ? "text-neutral-500" : "text-amber-600"}`}
                   title={onForm(q) ? "Drag to move" : "Not on the form yet: it needs at least two answers"}
                   onMouseDown={() => setGrab({ kind: "question", id: q.id })}
                   onMouseUp={endDrag}
@@ -192,12 +197,12 @@ export function FormEditor({ slug, initial, picked, save }: Props) {
                   {index + 1}
                 </div>
                 <div className={cell}>
-                  <button onClick={() => toggle(q.id)} aria-expanded={isOpen} aria-label={isOpen ? "Close question" : "Open question"} className="h-full px-4 text-lg text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100">
+                  <button onClick={() => toggle(q.id)} aria-expanded={isOpen} aria-label={isOpen ? "Close question" : "Open question"} className="h-full pl-3 pr-1 text-neutral-500 hover:text-neutral-900 dark:hover:text-neutral-100">
                     <span className={`inline-block transition-transform ${isOpen ? "-rotate-90" : "rotate-90"}`}>›</span>
                   </button>
-                  <input value={q.label} onChange={(e) => editQuestion(q.id, { label: e.target.value })} aria-label="Question" className={`${textBox} pr-12`} />
+                  <input value={q.label} onChange={(e) => editQuestion(q.id, { label: e.target.value })} aria-label="Question" className={`${textBox} pl-2 font-medium`} />
                 </div>
-                <div className={`${cell} text-sm font-normal text-neutral-500`}>Radio button</div>
+                <div className={typeCell}>Radio button</div>
                 <div className={cell}>
                   <button onClick={() => removeQuestion(q.id)} aria-label="Remove question" className={iconButton}>
                     ✕
@@ -227,20 +232,20 @@ export function FormEditor({ slug, initial, picked, save }: Props) {
                           aria-pressed={o.mustHave === true}
                           aria-label="Must have"
                           title="Must have"
-                          className={`text-xl ${o.mustHave ? "bg-green-500 text-black" : "bg-neutral-200 text-neutral-500 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700"}`}
+                          className={`${o.mustHave ? "bg-green-500 text-black" : "bg-neutral-200 text-neutral-500 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700"}`}
                         >
                           ✱
                         </button>
                         <div className={cell}>
                           <span
-                            className="cursor-grab select-none px-2 text-neutral-400"
+                            className="cursor-grab select-none pl-3 pr-1 text-xs text-neutral-400"
                             title="Drag to move"
                             onMouseDown={() => setGrab({ kind: "answer", questionId: q.id, value: o.value })}
                             onMouseUp={endDrag}
                           >
                             ⋮⋮
                           </span>
-                          <input value={o.label} onChange={(e) => editOption(q.id, o.value, { label: e.target.value })} aria-label="Answer" className={`${textBox} pr-8`} />
+                          <input value={o.label} onChange={(e) => editOption(q.id, o.value, { label: e.target.value })} aria-label="Answer" className={`${textBox} pl-1`} />
                         </div>
                         <div className={cell} title={used(q.id, o.value) ? `Picked by ${leadsWord(picked[`${q.id}|${o.value}`])}` : undefined}>
                           <select
@@ -250,7 +255,7 @@ export function FormEditor({ slug, initial, picked, save }: Props) {
                             className={pick}
                           >
                             {MARKS.map((m) => (
-                              <option key={m.value} value={m.value}>
+                              <option key={m.value} value={m.value} className={choice}>
                                 {m.label}
                               </option>
                             ))}
@@ -264,13 +269,13 @@ export function FormEditor({ slug, initial, picked, save }: Props) {
                       </div>
                     );
                   })}
-                  <div className={answerRow}>
+                  <div className={entryRow}>
                     <button
                       onClick={() => setDraft(q.id, { mustHave: !draft.mustHave })}
                       aria-pressed={draft.mustHave}
                       aria-label="Must have"
                       title="Must have"
-                      className={`text-xl ${draft.mustHave ? "bg-green-500 text-black" : "bg-neutral-200 text-neutral-500 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700"}`}
+                      className={`${draft.mustHave ? "bg-green-500 text-black" : "bg-neutral-200 text-neutral-500 hover:bg-neutral-300 dark:bg-neutral-800 dark:hover:bg-neutral-700"}`}
                     >
                       ✱
                     </button>
@@ -291,16 +296,18 @@ export function FormEditor({ slug, initial, picked, save }: Props) {
                         aria-label="Score for the new answer"
                         className={`${pick} ${draft.mark === "" ? "text-neutral-400" : ""}`}
                       >
-                        <option value="">choose score...</option>
+                        <option value="" className={choice}>
+                          choose score...
+                        </option>
                         {MARKS.map((m) => (
-                          <option key={m.value} value={m.value}>
+                          <option key={m.value} value={m.value} className={choice}>
                             {m.label}
                           </option>
                         ))}
                       </select>
                     </div>
                     <div className={cell}>
-                      <button onClick={() => addAnswer(q.id)} aria-label="Add answer" className={`${iconButton} text-xl`}>
+                      <button onClick={() => addAnswer(q.id)} aria-label="Add answer" className={`${iconButton} !text-base`}>
                         +
                       </button>
                     </div>
@@ -311,7 +318,7 @@ export function FormEditor({ slug, initial, picked, save }: Props) {
           );
         })}
 
-        <div className={row}>
+        <div className={entryRow}>
           <div />
           <div className={cell}>
             <input
@@ -323,12 +330,12 @@ export function FormEditor({ slug, initial, picked, save }: Props) {
               onKeyDown={(e) => e.key === "Enter" && addQuestion()}
               placeholder="Enter question..."
               aria-label="New question"
-              className={`${textBox} font-semibold`}
+              className={textBox}
             />
           </div>
-          <div className={`${cell} text-sm text-neutral-400`}>Radio button</div>
+          <div className={`${typeCell} !text-neutral-400`}>Radio button</div>
           <div className={cell}>
-            <button onClick={addQuestion} aria-label="Add question" className={`${iconButton} text-xl`}>
+            <button onClick={addQuestion} aria-label="Add question" className={`${iconButton} !text-base`}>
               +
             </button>
           </div>
