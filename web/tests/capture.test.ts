@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { type Db, withSession } from "../src/db/context";
 import { auditLog, clients, consents, leadEvents, leads, memberships, metaEvents, siteStats, users } from "../src/db/schema";
 import { defaultForm, scoreFit, siteFor } from "../src/site/config";
+import { placeholderEmails } from "../src/email/defaults";
+import { addStarterEmails, type Outgoing, sendDueEmails } from "../src/email/send";
 import { registerLead, type SignUpInput, siteSession } from "../src/site/leads";
 import { parseTrackEvent, recordEvent } from "../src/site/track";
 import { type Admin, freshDb, seedTwoBrands } from "./helpers";
@@ -39,20 +41,69 @@ describe("Fit score", () => {
   const form = defaultForm();
   const cases: [string, Record<string, string>, number][] = [
     ["ideal", ideal, 100],
-    ["manager with most of the money, starting in 3-6 months", { ...ideal, timing: "3-6", experience: "managed", money: "most", property: "interested" }, 70],
-    ["ready now but no experience and needs full funding", { ...ideal, experience: "no", money: "no" }, 50],
-    ["wants to do the work themselves, 6-12 months", { ...ideal, timing: "6-12", team: "self", property: "none" }, 55],
-    ["just looking, unsure, some experience", { timing: "looking", role: "employed", experience: "managed", money: "most", team: "unsure", property: "none" }, 40],
+    ["manager with most of the money, starting in 3-6 months", { ...ideal, timing: "3-6", experience: "managed", money: "most", property: "interested" }, 60],
+    ["ready now but no experience and needs full funding", { ...ideal, experience: "no", money: "no" }, 60],
+    ["wants to do the work themselves, 6-12 months", { ...ideal, timing: "6-12", team: "self", property: "none" }, 50],
+    ["just looking, unsure, some experience", { timing: "looking", role: "employed", experience: "managed", money: "most", team: "unsure", property: "none" }, 30],
     ["no fit at all", { timing: "looking", role: "employed", experience: "no", money: "no", team: "self", property: "none" }, 0],
   ];
   it.each(cases)("%s", (_name, answers, expected) => {
     expect(scoreFit(form, answers).score).toBe(expected);
   });
 
-  it("explains itself, and ignores questions that carry no points", () => {
+  it("explains itself, and ignores questions that are for information only", () => {
     const { detail } = scoreFit(form, ideal);
     expect(detail.map((d) => d.questionId)).toEqual(["timing", "experience", "money", "team", "property"]);
-    expect(detail[0]).toMatchObject({ answer: "In the next 3 months", points: 25, max: 25 });
+    expect(detail[0]).toMatchObject({ answer: "In the next 3 months", points: 2, max: 2 });
+  });
+});
+
+describe("missing a must-have answer", () => {
+  // Starting in the next 3 months is a must-have.
+  const mustForm = {
+    questions: defaultForm().questions.map((q) =>
+      q.id === "timing" ? { ...q, options: q.options.map((o) => (o.value === "0-3" ? { ...o, mustHave: true } : o)) } : q,
+    ),
+  };
+  const brand = () => ({ ...seed.refresh, form: mustForm });
+  const later = { ...ideal, timing: "3-6" };
+
+  it("saves them as Didn't qualify with their consent, but sends no Lead event and no emails", async () => {
+    await withSession(db, { userId: "u_owner", role: "owner", clientId: seed.refresh.id }, (tx) => addStarterEmails(tx, seed.refresh.id, placeholderEmails));
+    const result = await registerLead(db, brand(), signUp({ answers: later }));
+    expect(result).toMatchObject({ ok: true, isNew: true, qualified: false });
+    if (!result.ok) throw new Error("expected ok");
+    const [lead] = await admin.select().from(leads).where(eq(leads.id, result.leadId));
+    expect(lead).toMatchObject({ qualified: false, firstName: "Dana", answers: later });
+    expect(await admin.select().from(consents).where(eq(consents.leadId, result.leadId))).toHaveLength(1);
+    expect(await admin.select().from(metaEvents).where(eq(metaEvents.leadId, result.leadId))).toHaveLength(0);
+    const outbox: Outgoing[] = [];
+    const sent = await sendDueEmails(db, brand(), (mail) => void outbox.push(mail), new Date(), result.leadId);
+    expect(sent.sent).toBe(0);
+    expect(outbox).toHaveLength(0);
+  });
+
+  it("lets through someone who has it, as before", async () => {
+    await withSession(db, { userId: "u_owner", role: "owner", clientId: seed.refresh.id }, (tx) => addStarterEmails(tx, seed.refresh.id, placeholderEmails));
+    const result = await registerLead(db, brand(), signUp());
+    expect(result).toMatchObject({ ok: true, qualified: true });
+    if (!result.ok) throw new Error("expected ok");
+    expect(await admin.select().from(metaEvents).where(eq(metaEvents.leadId, result.leadId))).toHaveLength(1);
+    const outbox: Outgoing[] = [];
+    await sendDueEmails(db, brand(), (mail) => void outbox.push(mail), new Date(), result.leadId);
+    expect(outbox).toHaveLength(1);
+  });
+
+  it("is decided once: filling the form in again does not change sides", async () => {
+    const out = await registerLead(db, brand(), signUp({ answers: later }));
+    const outAgain = await registerLead(db, brand(), signUp());
+    expect(out).toMatchObject({ qualified: false });
+    expect(outAgain).toMatchObject({ isNew: false, qualified: false });
+
+    const inFirst = await registerLead(db, brand(), signUp({ email: "erin@example.test" }));
+    const inAgain = await registerLead(db, brand(), signUp({ email: "erin@example.test", answers: later }));
+    expect(inFirst).toMatchObject({ qualified: true });
+    expect(inAgain).toMatchObject({ isNew: false, qualified: true });
   });
 });
 

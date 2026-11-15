@@ -30,6 +30,7 @@ type Props = {
 export function SignUpForm({ slug, action, questions, consentWording, whatsappWording, utm, turnstileSiteKey }: Props) {
   const [state, submit, pending] = useActionState(action, emptySignUp);
   const formRef = useRef<HTMLFormElement>(null);
+  const thanksRef = useRef<HTMLDivElement>(null);
   const reported = useRef(new Set<string>());
   const once = (key: string, send: () => void) => {
     if (reported.current.has(key)) return;
@@ -48,6 +49,11 @@ export function SignUpForm({ slug, action, questions, consentWording, whatsappWo
     first?.querySelector<HTMLElement>("input")?.focus({ preventScroll: true });
   }, [state]);
 
+  // The thank-you box is much shorter than the form it replaces, so bring it into view.
+  useEffect(() => {
+    if (state.thanks) thanksRef.current?.scrollIntoView({ block: "center" });
+  }, [state.thanks]);
+
   const started = () => once("start", () => track(slug, { type: "form_start" }));
   const reachedQuestion = (id: string) => {
     started();
@@ -63,6 +69,14 @@ export function SignUpForm({ slug, action, questions, consentWording, whatsappWo
       {wrong(name) && <span className={hint}>{problem}</span>}
     </label>
   );
+
+  if (state.thanks) {
+    return (
+      <div ref={thanksRef} role="status" className="rounded-md border border-neutral-300 bg-white px-4 py-8 text-center text-lg font-medium text-neutral-900">
+        Thanks for your interest.
+      </div>
+    );
+  }
 
   return (
     <form ref={formRef} action={submit} className="flex flex-col gap-4" onInput={started}>

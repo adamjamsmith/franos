@@ -2,7 +2,7 @@ import { updateBrand, updateSiteContent } from "@/app/actions";
 import { saveFee } from "@/app/b/[slug]/work-actions";
 import { buttonClass, Field, inputClass, Notice, quietButtonClass } from "@/components/ui";
 import { requireBrand } from "@/lib/session";
-import { formFor, siteFor } from "@/site/config";
+import { siteFor } from "@/site/config";
 
 const typeNames: Record<string, string> = {
   business_builder: "Business builder (management franchise)",
@@ -15,7 +15,6 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
   const { client, role } = await requireBrand(slug);
   const target = client.targetCostPerSigningPence ? client.targetCostPerSigningPence / 100 : null;
   const site = siteFor(client);
-  const form = formFor(client);
 
   if (role !== "owner") {
     return (
@@ -141,21 +140,6 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
         </form>
       </section>
 
-      <section>
-        <h2 className="mb-1 text-lg font-semibold">Form questions and Fit points</h2>
-        <p className="mb-3 text-sm text-neutral-500">
-          Shown for reference. Changing the questions and points from this screen comes later in Step 1; for now ask
-          Claude to change them.
-        </p>
-        <ul className="flex flex-col gap-3 text-sm">
-          {form.questions.map((q) => (
-            <li key={q.id}>
-              <p className="font-medium">{q.label}</p>
-              <p className="text-neutral-500">{q.options.map((o) => `${o.label} (${o.points})`).join(" · ")}</p>
-            </li>
-          ))}
-        </ul>
-      </section>
     </div>
   );
 }

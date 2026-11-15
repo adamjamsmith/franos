@@ -2,7 +2,13 @@
  * What the sign-up form is told after a failed attempt: a message, which boxes are wrong,
  * and everything the visitor had typed, so nothing has to be typed again.
  */
-export type SignUpState = { message: string; wrong: string[]; values: Record<string, string> };
+export type SignUpState = {
+  message: string;
+  wrong: string[];
+  values: Record<string, string>;
+  /** The form was complete, but they missed a must-have answer. They see a plain thank-you and nothing else. */
+  thanks?: boolean;
+};
 
 export const emptySignUp: SignUpState = { message: "", wrong: [], values: {} };
 

@@ -1,4 +1,4 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import Link from "next/link";
 import { callSettingsFor } from "@/calls/slots";
 import { ukWhen } from "@/calls/time";
@@ -32,7 +32,7 @@ export default async function BoardPage({ params, searchParams }: PageProps<"/b/
   const goodFitFrom = callSettingsFor(siteFor(client)).alertFit;
 
   const { allLeads, allCalls } = await withSession(db, session, async (tx) => ({
-    allLeads: await tx.select().from(leads).orderBy(desc(leads.fitScore), desc(leads.createdAt)).limit(2000),
+    allLeads: await tx.select().from(leads).where(eq(leads.qualified, true)).orderBy(desc(leads.fitScore), desc(leads.createdAt)).limit(2000),
     allCalls: await tx.select().from(calls),
   }));
   const callsOf = new Map<string, typeof allCalls>();

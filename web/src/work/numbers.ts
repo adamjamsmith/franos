@@ -3,7 +3,16 @@ import { ukDay, ukTimeOnDay } from "../email/render";
 /** Below this many, a percentage or a cost is too shaky to act on. */
 export const TOO_FEW = 10;
 
-type LeadRow = { id: string; createdAt: Date; fitScore: number | null; utm: unknown; outcome: string | null; outcomeAt: Date | null };
+type LeadRow = {
+  id: string;
+  createdAt: Date;
+  fitScore: number | null;
+  utm: unknown;
+  outcome: string | null;
+  outcomeAt: Date | null;
+  /** False for someone who missed a must-have answer. They are not counted as leads. */
+  qualified?: boolean;
+};
 type CallRow = { leadId: string; createdAt: Date; startsAt: Date; status: string; goodCall: boolean | null };
 
 export type Counts = { leads: number; booked: number; happened: number; noShows: number; good: number; signed: number };
@@ -12,7 +21,9 @@ export type Numbers = {
   spendPence: number;
   /** Whether any spend has been typed in for the months this period touches. */
   hasSpend: boolean;
-  byAd: { ad: string; counts: Counts }[];
+  byAd: { ad: string; counts: Counts; notQualified: number }[];
+  /** People who completed the form in the period but missed a must-have answer. */
+  notQualified: number;
   goodFit: Counts;
   otherFit: Counts;
 };
@@ -75,7 +86,17 @@ export function computeNumbers(input: {
     ads.get(ad)![key]++;
   };
 
+  let notQualified = 0;
+  const notQualifiedByAd = new Map<string, number>();
   for (const lead of input.leads) {
+    if (lead.qualified === false) {
+      if (!inPeriod(lead.createdAt)) continue;
+      notQualified++;
+      const ad = adOf(lead);
+      if (!ads.has(ad)) ads.set(ad, empty());
+      notQualifiedByAd.set(ad, (notQualifiedByAd.get(ad) ?? 0) + 1);
+      continue;
+    }
     if (inPeriod(lead.createdAt)) add(lead, "leads");
     if (lead.outcome === "signed" && inPeriod(lead.outcomeAt)) add(lead, "signed");
   }
@@ -93,7 +114,8 @@ export function computeNumbers(input: {
     totals,
     spendPence: spend.pence,
     hasSpend: spend.hasSpend,
-    byAd: [...ads.entries()].map(([ad, counts]) => ({ ad, counts })).sort((a, b) => b.counts.leads - a.counts.leads),
+    byAd: [...ads.entries()].map(([ad, counts]) => ({ ad, counts, notQualified: notQualifiedByAd.get(ad) ?? 0 })).sort((a, b) => b.counts.leads - a.counts.leads),
+    notQualified,
     goodFit,
     otherFit,
   };

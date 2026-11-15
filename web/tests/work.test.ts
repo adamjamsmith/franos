@@ -308,6 +308,15 @@ describe("the numbers", () => {
     goodFitFrom: 70,
   };
 
+  it("count people who didn't qualify separately, by ad, and not as leads", () => {
+    const out = { ...lead("x", "2026-03-10", { ad: "Carousel" }), qualified: false };
+    const outFebruary = { ...lead("y", "2026-02-10", { ad: "Carousel" }), qualified: false };
+    const n = computeNumbers({ ...input, leads: [...input.leads, out, outFebruary] });
+    expect(n.totals.leads).toBe(5);
+    expect(n.notQualified).toBe(1);
+    expect(n.byAd.find((row) => row.ad === "Carousel")).toMatchObject({ notQualified: 1, counts: { leads: 2 } });
+  });
+
   it("match a period counted by hand", () => {
     const n = computeNumbers(input);
     expect(n.totals).toEqual({ leads: 5, booked: 4, happened: 2, noShows: 1, good: 1, signed: 1 });
@@ -322,9 +331,9 @@ describe("the numbers", () => {
   it("break down by ad and by fit, and each breakdown adds up to the totals", () => {
     const n = computeNumbers(input);
     expect(n.byAd).toEqual([
-      { ad: "Ali video", counts: { leads: 2, booked: 2, happened: 2, noShows: 0, good: 1, signed: 1 } },
-      { ad: "Carousel", counts: { leads: 2, booked: 1, happened: 0, noShows: 1, good: 0, signed: 0 } },
-      { ad: "No ad recorded", counts: { leads: 1, booked: 1, happened: 0, noShows: 0, good: 0, signed: 0 } },
+      { ad: "Ali video", counts: { leads: 2, booked: 2, happened: 2, noShows: 0, good: 1, signed: 1 }, notQualified: 0 },
+      { ad: "Carousel", counts: { leads: 2, booked: 1, happened: 0, noShows: 1, good: 0, signed: 0 }, notQualified: 0 },
+      { ad: "No ad recorded", counts: { leads: 1, booked: 1, happened: 0, noShows: 0, good: 0, signed: 0 }, notQualified: 0 },
     ]);
     for (const key of ["leads", "booked", "happened", "noShows", "good", "signed"] as const) {
       expect(n.byAd.reduce((sum, row) => sum + row.counts[key], 0)).toBe(n.totals[key]);

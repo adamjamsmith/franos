@@ -3,7 +3,7 @@ import Link from "next/link";
 import { withSession } from "@/db/context";
 import { leads } from "@/db/schema";
 import { requireBrand } from "@/lib/session";
-import { formFor } from "@/site/config";
+import { fullFormFor } from "@/site/config";
 
 export default async function LeadsPage({ params, searchParams }: PageProps<"/b/[slug]">) {
   const { slug } = await params;
@@ -17,7 +17,7 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/b/
       .orderBy(...(byFit ? [sql`${leads.fitScore} desc nulls last`] : []), desc(leads.createdAt))
       .limit(500),
   );
-  const timing = formFor(client).questions.find((q) => q.id === "timing");
+  const timing = fullFormFor(client).questions.find((q) => q.id === "timing");
   const timingLabel = (value: unknown) => timing?.options.find((o) => o.value === value)?.label ?? "—";
 
   return (
@@ -63,6 +63,9 @@ export default async function LeadsPage({ params, searchParams }: PageProps<"/b/
                       <Link href={`/b/${slug}/leads/${lead.id}`} className="font-medium underline">
                         {[lead.firstName, lead.lastName].filter(Boolean).join(" ") || lead.email}
                       </Link>
+                      {!lead.qualified && (
+                        <span className="ml-2 rounded-full bg-neutral-200 px-2 py-0.5 text-xs text-neutral-700">Didn&apos;t qualify</span>
+                      )}
                     </td>
                     <td>{lead.fitScore ?? "—"}</td>
                     <td>{timingLabel(answers.timing)}</td>

@@ -99,6 +99,7 @@ export async function sendDueEmails(
       .where(
         and(
           isNull(leads.unsubscribedAt),
+          eq(leads.qualified, true),
           or(isNull(leads.outcome), notInArray(leads.outcome, FINAL_OUTCOMES)),
           onlyLeadId ? eq(leads.id, onlyLeadId) : undefined,
         ),
@@ -177,7 +178,7 @@ export async function sendDueEmails(
 /** What a lead will be emailed next and roughly when, for showing on their record. Null if nothing is coming. */
 export async function nextEmailForLead(tx: Tx, brand: Brand, leadId: string, now: Date = new Date()) {
   const [lead] = await tx.select().from(leads).where(eq(leads.id, leadId));
-  if (!lead || lead.unsubscribedAt || FINAL_OUTCOMES.includes(lead.outcome ?? "")) return null;
+  if (!lead || !lead.qualified || lead.unsubscribedAt || FINAL_OUTCOMES.includes(lead.outcome ?? "")) return null;
   const site = siteFor(brand);
   const active = await tx.select().from(emails).where(eq(emails.active, true)).orderBy(asc(emails.position));
   const mine = await tx.select({ emailId: emailSends.emailId, sentAt: emailSends.sentAt }).from(emailSends).where(eq(emailSends.leadId, leadId));

@@ -13,3 +13,5 @@
 | 5. Learn | — | |
 
 **Launch date:** 16 December 2026, on franOS v2 (thin launch version). One funnel (Adam's lead-first), no A/B split.
+
+**15 Nov 2026:** the sign-up form can now be changed on screen (Settings > Form): questions, Great / OK / Poor marks, must-have answers, and a bin. The questions are still the first draft from the avatar card; no must-haves are set. Next for this brand is unchanged: the franchise domain and AWS.

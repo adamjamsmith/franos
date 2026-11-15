@@ -78,6 +78,9 @@ export async function submitSignUp(_previous: SignUpState, form: FormData): Prom
     return reasons[result.reason];
   }
 
+  // Missed a must-have: a plain thank-you, and nothing else. No thank-you page, no emails, no booking.
+  if (!result.qualified) return { message: "", wrong: [], values: {}, thanks: true };
+
   // Send the prospectus email straight away. A problem here must never stop the sign-up itself.
   try {
     await sendDueEmails(await appDb(), brand, mailboxDeliver, new Date(), result.leadId);

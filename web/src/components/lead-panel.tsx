@@ -12,7 +12,7 @@ import { calls, consents, leadEvents, leads } from "@/db/schema";
 import { nextStepFor, pathFrom } from "@/email/render";
 import { nextEmailForLead } from "@/email/send";
 import { isDev } from "@/lib/dev-mailbox";
-import { type FitLine, formFor, siteFor } from "@/site/config";
+import { type FitLine, fullFormFor, siteFor } from "@/site/config";
 import { NEXT_MOVES, type NextMove, REASONS } from "@/work/outcomes";
 import { nextAction, placeLead, STAGE_NAMES } from "@/work/stage";
 
@@ -152,7 +152,8 @@ export async function LeadPanel({ slug, leadId, base, query, access }: Props) {
   const { lead, events, consent, leadCalls, days, nextEmail } = found;
 
   const site = siteFor(client);
-  const form = formFor(client);
+  // The full form, so an answer that was later binned still shows its wording.
+  const form = { questions: fullFormFor(client).questions.filter((q) => !q.removed) };
   const answers = lead.answers as Record<string, string>;
   const fit = lead.fitDetail as FitLine[];
   const utm = lead.utm as Record<string, string>;
@@ -215,6 +216,11 @@ export async function LeadPanel({ slug, leadId, base, query, access }: Props) {
           <h2 className="text-2xl font-semibold">{[lead.firstName, lead.lastName].filter(Boolean).join(" ") || lead.email}</h2>
           <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${stagePill}`}>{STAGE_NAMES[placed.stage]}</span>
           <span className="rounded-full bg-neutral-200 px-2.5 py-0.5 text-xs font-semibold text-neutral-800">Fit {lead.fitScore ?? "—"}</span>
+          {!lead.qualified && (
+            <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-900" title="They missed a must-have answer on the form. No emails, no booking.">
+              Didn&apos;t qualify
+            </span>
+          )}
           {placed.goodCall && <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-900">Good call</span>}
         </div>
         <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">

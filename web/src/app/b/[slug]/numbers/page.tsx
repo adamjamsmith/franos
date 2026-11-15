@@ -53,7 +53,7 @@ export default async function NumbersPage({ params, searchParams }: PageProps<"/
   const few = (count: number) => (count > 0 && count < TOO_FEW ? " (too few to judge yet)" : "");
 
   const lines: { label: string; count: number; note?: string; from?: number; fromLabel?: string }[] = [
-    { label: "Leads", count: t.leads },
+    { label: "Leads", count: t.leads, note: n.notQualified > 0 ? `${n.notQualified} more filled in the form but didn't qualify` : undefined },
     { label: "Calls booked", count: t.booked, from: t.leads, fromLabel: "of leads" },
     {
       label: "Calls that happened",
@@ -166,7 +166,7 @@ export default async function NumbersPage({ params, searchParams }: PageProps<"/
           <div className="overflow-x-auto">
             <table className="w-full min-w-[34rem] text-left text-sm">
               {breakdownHead("Ad")}
-              <tbody>{n.byAd.map((row) => adRow(row.ad, row.counts))}</tbody>
+              <tbody>{n.byAd.map((row) => adRow(row.notQualified > 0 ? `${row.ad} · ${row.notQualified} didn't qualify` : row.ad, row.counts))}</tbody>
             </table>
           </div>
         )}

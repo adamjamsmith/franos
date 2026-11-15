@@ -1,0 +1,1 @@
+ALTER TABLE "leads" ADD COLUMN "qualified" boolean DEFAULT true NOT NULL;

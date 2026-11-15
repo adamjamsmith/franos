@@ -148,6 +148,11 @@ export const leads = pgTable(
     /** The ad they came from: source, medium, campaign, term (ad set), content (ad). */
     utm: jsonb("utm").notNull().default({}),
     whatsappOptIn: boolean("whatsapp_opt_in").notNull().default(false),
+    /**
+     * False when they completed the form but missed a must-have answer ("Didn't qualify").
+     * Set once, at their first sign-up: they get no emails, no booking and no Meta Lead event, and are kept off the board.
+     */
+    qualified: boolean("qualified").notNull().default(true),
     /** Set when the lead unsubscribes. They are never emailed again by this brand. */
     unsubscribedAt: timestamp("unsubscribed_at", { withTimezone: true }),
     /** How the lead ended: "signed" or "not_interested" (shown as Not going ahead). Empty while they are open. */

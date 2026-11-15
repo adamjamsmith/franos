@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import { type Db, type Session, withSession } from "../db/context";
 import { consents, leadEvents, leads, metaEvents } from "../db/schema";
 import { bump } from "./track";
-import { formFor, scoreFit, siteFor } from "./config";
+import { formFor, fullFormFor, qualifies, scoreFit, siteFor } from "./config";
 
 type Brand = { id: string; name: string; site: unknown; form: unknown };
 
@@ -22,7 +22,8 @@ export type SignUpInput = {
 };
 
 export type SignUpResult =
-  | { ok: true; leadId: string; isNew: boolean; fitScore: number }
+  /** `qualified: false` means they missed a must-have answer: saved, but nothing further happens. */
+  | { ok: true; leadId: string; isNew: boolean; fitScore: number; qualified: boolean }
   | { ok: false; reason: "spam" | "consent" | "details" | "answers" };
 
 /** The session the public pages use: one brand, no person. */
@@ -52,7 +53,9 @@ export async function registerLead(db: Db, brand: Brand, input: SignUpInput): Pr
   }
   if (input.why.trim()) answers.why = input.why.trim().slice(0, 2000);
 
-  const { score, detail } = scoreFit(form, answers);
+  const full = fullFormFor(brand);
+  const { score, detail } = scoreFit(full, answers);
+  const passes = qualifies(full, answers);
   const utm = Object.fromEntries(
     UTM_KEYS.filter((k) => input.utm[k]).map((k) => [k, String(input.utm[k]).slice(0, 200)]),
   );
@@ -70,10 +73,12 @@ export async function registerLead(db: Db, brand: Brand, input: SignUpInput): Pr
 
   return withSession(db, siteSession(brand.id), async (tx) => {
     const [existing] = await tx
-      .select({ id: leads.id })
+      .select({ id: leads.id, qualified: leads.qualified })
       .from(leads)
       .where(and(eq(leads.clientId, brand.id), eq(leads.email, email)));
 
+    // Decided once, at the first sign-up. Filling the form in again does not change sides.
+    const qualified = existing ? existing.qualified : passes;
     let leadId: string;
     if (existing) {
       leadId = existing.id;
@@ -82,7 +87,7 @@ export async function registerLead(db: Db, brand: Brand, input: SignUpInput): Pr
     } else {
       const [created] = await tx
         .insert(leads)
-        .values({ clientId: brand.id, email, utm, ...values })
+        .values({ clientId: brand.id, email, utm, qualified, ...values })
         .returning({ id: leads.id });
       leadId = created.id;
     }
@@ -107,10 +112,11 @@ export async function registerLead(db: Db, brand: Brand, input: SignUpInput): Pr
       clientId: brand.id,
       leadId,
       type: existing ? "signed_up_again" : "signed_up",
-      data: { fitScore: score, utm },
+      data: { fitScore: score, utm, ...(qualified ? {} : { qualified: false }) },
     });
-    // One Lead event per lead, however many times they submit the form.
-    await tx
+    // One Lead event per lead, however many times they submit the form. None for someone who did not qualify,
+    // so Meta is not taught to find more people like them.
+    if (qualified) await tx
       .insert(metaEvents)
       .values({
         clientId: brand.id,
@@ -122,6 +128,6 @@ export async function registerLead(db: Db, brand: Brand, input: SignUpInput): Pr
       .onConflictDoNothing({ target: [metaEvents.clientId, metaEvents.eventId] });
     await bump(tx, brand.id, "form_submit");
 
-    return { ok: true as const, leadId, isNew: !existing, fitScore: score };
+    return { ok: true as const, leadId, isNew: !existing, fitScore: score, qualified };
   });
 }

@@ -14,7 +14,7 @@ All four launch steps run on Adam's computer: capture, emails, calls, and workin
 | A2 | ~~Call reminders up to six, in two versions~~ **Done 14 Nov** | |
 | A3 | ~~Email layouts and the named starter library~~ **Done 14 Nov** (docs/18). The real wording is the copywriter's job (D4), not copied from GoHighLevel | |
 | A4 | **Emails on screen:** add, delete and reorder are done. Still to do: links to other websites, and editing the call emails | Nothing |
-| A5 | **Form questions on screen:** edit the questions and Fit points without asking Claude | The questions themselves |
+| A5 | ~~Form questions on screen: edit the questions, mark answers Great, OK or Poor, set must-haves~~ **Done 15 Nov** (spec 19) | |
 | A6 | **Layouts and templates rework** of the public pages, once the flow is agreed (decision 55) | A session together on how they should look |
 
 ### B. Accounts only Adam can open (start now: some take days)
