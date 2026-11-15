@@ -374,7 +374,20 @@ export async function collectCall(db: Db, brand: Brand, deps: CallDeps, callId: 
   });
   if (!call || call.status !== "booked" || !call.meetingId) return false;
   const report = await deps.provider.report(call.meetingId);
-  if (!report) return false;
+  if (!report) {
+    if (deps.provider.waitsForCalls && now.getTime() < call.endsAt.getTime() + 3 * HOUR) {
+      await withSession(db, siteSession(brand.id), (tx) =>
+        tx.insert(jobs).values({
+          clientId: brand.id,
+          type: "call_collect",
+          runAt: new Date(now.getTime() + 15 * 60_000),
+          payload: { callId, kind: "collect", startsAt: call.startsAt.toISOString() },
+          dedupeKey: `call-${callId}-collect-again-${now.getTime()}`,
+        }),
+      );
+    }
+    return false;
+  }
   return finishCall(db, siteSession(brand.id), brand, deps, { callId, report, now });
 }
 

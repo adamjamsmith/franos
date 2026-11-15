@@ -44,6 +44,16 @@ On the homepage the button is always "Download the prospectus" and goes to the f
 3. Prospectus read, no call: "Schedule a call", which goes to the calendar.
 4. Call booked: "Download next steps". The questions are reached from there.
 
+## Zoom
+franOS talks to Zoom through a private app ("franos", a Server-to-Server OAuth app) on Franchise Right's own Zoom account, which Adam owns. Consultants are users on that account, on whatever email they have.
+
+- **The app's three codes live in the AWS secret store** (`franos/zoom`, in the franos project). They are never in a file or in a chat. On Adam's computer, `npm run dev:zoom` fetches them with his own AWS login, hands them to franOS in memory, and starts it.
+- **The app can only** create, read, change and delete meetings, read past meetings and who was in them, read recordings and transcripts, and look up users. It cannot touch billing, settings, or other users.
+- **Each meeting** is set to record to the cloud by itself, with no waiting room, and the lead can arrive before the host.
+- **After a call,** franOS asks Zoom what happened: nobody opened the meeting, or only one person was there, is a no-show; two or more is attended, with the length. If the call is still running it asks again every 15 minutes, for up to three hours.
+- **Meetings are created on the account owner** for now. A brand's consultant becomes the host once they are added to the Zoom account.
+- **Calls booked while the stand-in was in use** keep their made-up links and are left alone.
+
 ## Media
 The owner adds a brand's pictures, videos and PDFs under **Settings > Media**. Each file gets an address that starts with `/media/`; "Copy address" copies it, to paste into the settings box that needs it (logo, prospectus picture, proof images, videos, documents, email pictures).
 
@@ -141,10 +151,10 @@ The menu runs down the left-hand side as icons, with their names beside them on 
 | Real thing | Today |
 |---|---|
 | Email | A test mailbox at `/dev/mailbox` |
-| Zoom | Made-up meeting links; "Pretend this call has happened" adds a sample recording and transcript |
+| Zoom | **Real, when franOS is started with `npm run dev:zoom`:** booking a call creates a meeting on Franchise Right's own Zoom account, moving or cancelling the call does the same on Zoom, and afterwards franOS asks Zoom whether the call happened. Started with plain `npm run dev`, a stand-in hands out made-up links. Recordings and transcripts need the paid Zoom plan, which is not bought yet |
 | Meta | Lead, Schedule, Good call and Signed are recorded, never sent |
 | The consultant's calendar | Working hours set in franOS; it cannot see other appointments |
 | The internet | Runs at `localhost:3000` on Adam's computer |
 
 ## How it is checked
-189 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.
+204 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.

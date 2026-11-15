@@ -25,7 +25,7 @@ From `11-your-setup-checklist.md`. These are the critical path, because email ap
 | B1 | ~~Franchise domain for Refresh~~ **For now: `refresh.franchiseright.co.uk`** (decision 101). The domain is at Namecheap. Sending address created and verified in AWS 15 Nov (three lines added in Namecheap). **Request to lift test mode sent to Amazon 15 Nov, awaiting their reply by email to Adam** | Everything public hangs off it, and the email address must warm up for 2 to 3 weeks before launch |
 | B2 | ~~AWS account~~ **Open 15 Nov:** project `franos`, Stockholm, on the free plan (decision 100). Claude is connected through Adam's own login, 12 hours at a time. Still to do: move to the paid plan and set the spend limit before going live | Hosting, email and video. Email is in Amazon's test mode (200 a day, verified addresses only) until they approve a request |
 | B3 | ~~GitHub and Neon~~ **Open 15 Nov:** private repository `franos` linked, nothing sent yet; Neon project made, not connected | Where the code and the live database are kept |
-| B4 | **Zoom** (the account Mike's calls are on) | Real meeting links, recordings and transcripts |
+| B4 | ~~Zoom~~ **Open 15 Nov:** Franchise Right's own account (free plan), with the franos app created and its codes in the AWS secret store (decision 102). Still to do: upgrade to Pro when testing recording; add the consultant as a user | Real meeting links, recordings and transcripts |
 | B5 | **Meta** dataset and ad account access | Lead and Schedule events; ad spend |
 | B6 | **Who checks the legal wording** | Consent tick, privacy notice, call recording, "I saw you opened..." emails |
 | B7 | **John English:** real figures, franchise fee, support details | Needed for the prospectus, the form and the Signed event value |
@@ -37,7 +37,7 @@ From `11-your-setup-checklist.md`. These are the critical path, because email ap
 | C1a | Switch the media store to AWS file storage, with video served from Amazon's network, and copy across the files uploaded so far | B2, C1 |
 | C2 | Real email through Amazon SES: sending, bounces, spam complaints, and closing the "could send twice" gap. **Handling bounce and complaint notifications must be built before any real email goes out: the request to Amazon says franOS will do it** | B1, B2 |
 | C3 | Start the email warm-up at a low daily limit | C2 |
-| C4 | Connect the real Zoom; keep recordings in franOS's own storage | B4, C1 |
+| C4 | **Zoom connected 15 Nov:** booking, moving and cancelling a call create, move and delete a real Zoom meeting, and attendance is read back afterwards (tested on Adam's computer). Still to do: collect recordings and transcripts once on Pro, with a later second look because Zoom can take a while to process them; keep the recordings in franOS's own storage; receive Zoom's "recording ready" message once franOS is hosted; make the brand's consultant the host | B4, C1 |
 | C5 | Connect Mike's calendar so franOS sees his other appointments | Mike's Google or Microsoft account |
 | C6 | Send Lead and Schedule to Meta; Good call and Signed in the background | B5 |
 | C7 | Switch on Cloudflare Turnstile on the form | B1 |

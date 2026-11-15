@@ -5,7 +5,8 @@ import { mailboxDeliver } from "../email/deliver";
 import { runDueJobs } from "../jobs/runner";
 import type { Brand, CallDeps, Staff } from "./calls";
 import { callJobHandlers } from "./jobs";
-import { standInZoom } from "./provider";
+import { type MeetingProvider, standInZoom } from "./provider";
+import { zoomCredentialsFromEnv, zoomProvider } from "./zoom";
 
 /**
  * Who is told about a brand's bookings and good-fit leads: its consultants.
@@ -23,12 +24,25 @@ export async function staffFor(clientId: string): Promise<Staff[]> {
   return db.select({ name: users.name, email: users.email }).from(users).where(eq(users.isOwner, true));
 }
 
+// One Zoom connection for the whole app, so its hourly pass is fetched once and shared.
+let zoom: MeetingProvider | null | undefined;
+
+/** The real Zoom when franOS was started with its codes (see scripts/dev-zoom.mjs); otherwise the stand-in. */
+export function meetingProvider(): MeetingProvider {
+  if (zoom === undefined) {
+    const credentials = zoomCredentialsFromEnv();
+    zoom = credentials ? zoomProvider(credentials, { host: process.env.FRANOS_ZOOM_HOST }) : null;
+  }
+  return zoom ?? standInZoom;
+}
+
 /**
  * How calls reach the outside world while franOS runs on this computer: emails go to the
- * test mailbox and a stand-in plays the part of Zoom. On AWS these become Amazon SES and Zoom.
+ * test mailbox, and meetings are either real Zoom meetings or the stand-in's. On AWS the
+ * emails become Amazon SES.
  */
 export async function appCallDeps(brand: Pick<Brand, "id">): Promise<CallDeps> {
-  return { deliver: mailboxDeliver, provider: standInZoom, staff: await staffFor(brand.id) };
+  return { deliver: mailboxDeliver, provider: meetingProvider(), staff: await staffFor(brand.id) };
 }
 
 /** Runs every piece of timed work that is due: reminders, held alerts, collecting finished calls. Run once a minute. */

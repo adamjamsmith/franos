@@ -22,6 +22,8 @@ export type MeetingProvider = {
   cancel(meetingId: string): Promise<void>;
   /** What happened on the call, or null if the service has nothing to report yet. */
   report(meetingId: string): Promise<CallReport | null>;
+  /** True for a real service, where "nothing to report yet" means the call is still running and is worth asking about again. */
+  waitsForCalls?: boolean;
 };
 
 const base = () => process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
