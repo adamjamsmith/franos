@@ -44,10 +44,28 @@ On the homepage the button is always "Download the prospectus" and goes to the f
 3. Prospectus read, no call: "Schedule a call", which goes to the calendar.
 4. Call booked: "Download next steps". The questions are reached from there.
 
+## Meta
+franOS tells Meta when a lead signs up, books a call, has a good call and signs, so Meta can learn who to show the ads to.
+
+| franOS records | Meta receives it as | Value |
+|---|---|---|
+| Lead (signed up and qualified) | Lead | |
+| Schedule (booked a call) | Schedule | |
+| Good call | SubmitApplication | |
+| Signed | Purchase | The franchise fee, in pounds |
+
+- **Franchise Right owns each brand's dataset;** the client owns the ad account and pays Meta. The dataset ID and its test code are set under Settings > Brand and pages. The dataset's access token is kept encrypted in AWS (`/franos/meta`).
+- **Nothing real is sent until a brand is live.** Going live is not a box on any screen: it is set at go-live, with Adam's approval, together with the moment it happened. Until then every event carries the brand's test code, so it appears in Meta's "Test events" tab and nowhere else. With no test code, nothing is sent at all.
+- **Test leads never become real events.** Once a brand is live, only events from the moment it went live are sent.
+- **A person's details never leave in the clear.** Email, phone, name and postcode are tidied the way Meta specifies and then scrambled.
+- **Each event has a fixed id,** so Meta counts it once even if it is sent twice.
+- **The Lead event includes the visitor's browser and address,** captured at sign-up, which Meta needs to treat it as a website event. The consent tick covers this.
+- Events are sent once a minute, alongside the emails and the call reminders.
+
 ## Zoom
 franOS talks to Zoom through a private app ("franos", a Server-to-Server OAuth app) on Franchise Right's own Zoom account, which Adam owns. Consultants are users on that account, on whatever email they have.
 
-- **The app's three codes live in the AWS secret store** (`franos/zoom`, in the franos project). They are never in a file or in a chat. On Adam's computer, `npm run dev:zoom` fetches them with his own AWS login, hands them to franOS in memory, and starts it.
+- **The app's three codes live encrypted in AWS,** in Parameter Store (`/franos/zoom`, in the franos project). Parameter Store is free; Secrets Manager, tried first, charges per entry. They are never in a file or in a chat. On Adam's computer, `npm run dev:zoom` fetches them with his own AWS login, hands them to franOS in memory, and starts it.
 - **The app can only** create, read, change and delete meetings, read past meetings and who was in them, read recordings and transcripts, and look up users. It cannot touch billing, settings, or other users.
 - **Each meeting** is set to record to the cloud by itself, with no waiting room, and the lead can arrive before the host.
 - **After a call,** franOS asks Zoom what happened: nobody opened the meeting, or only one person was there, is a no-show; two or more is attended, with the length. If the call is still running it asks again every 15 minutes, for up to three hours.
@@ -152,9 +170,9 @@ The menu runs down the left-hand side as icons, with their names beside them on 
 |---|---|
 | Email | A test mailbox at `/dev/mailbox` |
 | Zoom | **Real, when franOS is started with `npm run dev:zoom`:** booking a call creates a meeting on Franchise Right's own Zoom account, moving or cancelling the call does the same on Zoom, and afterwards franOS asks Zoom whether the call happened. Started with plain `npm run dev`, a stand-in hands out made-up links. Recordings and transcripts need the paid Zoom plan, which is not bought yet |
-| Meta | Lead, Schedule, Good call and Signed are recorded, never sent |
+| Meta | **Test mode only.** Lead, Schedule, Good call and Signed are recorded, and for a brand with a dataset and a test code they are sent to Meta's "Test events" tab. Nothing real is sent until a brand is switched to live at go-live |
 | The consultant's calendar | Working hours set in franOS; it cannot see other appointments |
 | The internet | Runs at `localhost:3000` on Adam's computer |
 
 ## How it is checked
-204 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.
+217 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.

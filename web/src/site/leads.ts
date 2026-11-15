@@ -19,6 +19,8 @@ export type SignUpInput = {
   utm: Record<string, string>;
   /** A hidden field real people never fill in. */
   honeypot: string;
+  /** The visitor's browser and address, passed to Meta with the Lead event. Covered by the consent tick. */
+  client?: { userAgent?: string; ip?: string };
 };
 
 export type SignUpResult =
@@ -123,7 +125,7 @@ export async function registerLead(db: Db, brand: Brand, input: SignUpInput): Pr
         leadId,
         eventName: "Lead",
         eventId: `lead-${leadId}`,
-        payload: { fitScore: score, utm },
+        payload: { fitScore: score, utm, ...(input.client?.userAgent ? { userAgent: input.client.userAgent.slice(0, 400) } : {}), ...(input.client?.ip ? { ip: input.client.ip.slice(0, 60) } : {}) },
       })
       .onConflictDoNothing({ target: [metaEvents.clientId, metaEvents.eventId] });
     await bump(tx, brand.id, "form_submit");

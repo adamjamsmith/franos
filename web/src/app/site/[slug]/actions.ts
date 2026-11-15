@@ -1,6 +1,7 @@
 "use server";
 
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { speedAlert } from "@/calls/alert";
 import { bookCall, cancelCall } from "@/calls/calls";
@@ -18,6 +19,13 @@ import { type SignUpState, validEmail, validPhone } from "@/site/signup-state";
 import { passesTurnstile } from "@/site/spam";
 
 const text = (form: FormData, key: string) => String(form.get(key) ?? "");
+
+/** The visitor's browser and address, as their request reports them. */
+async function visitor() {
+  const sent = await headers();
+  const ip = (sent.get("x-forwarded-for") ?? "").split(",")[0].trim();
+  return { userAgent: sent.get("user-agent") ?? "", ip: /^[0-9a-f.:]+$/i.test(ip) ? ip : "" };
+}
 
 const KEPT = ["firstName", "lastName", "email", "phone", "postcode", "why", "consent", "whatsapp"];
 
@@ -67,6 +75,7 @@ export async function submitSignUp(_previous: SignUpState, form: FormData): Prom
     whatsapp: form.get("whatsapp") === "on",
     utm,
     honeypot: text(form, "company_website"),
+    client: await visitor(),
   });
   if (!result.ok) {
     const reasons = {

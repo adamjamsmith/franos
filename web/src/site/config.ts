@@ -54,7 +54,14 @@ export type CallSettings = {
   alertTo: string;
 };
 
+/**
+ * A brand's link to Meta. `datasetId` and `testCode` are set in Settings. `live` and `liveFrom` are not on any
+ * screen: they are set at go-live, with Adam's approval. Until then every event goes to Meta as a test only.
+ */
+export type MetaLink = { datasetId?: string; testCode?: string; live?: boolean; liveFrom?: string };
+
 export type SiteContent = {
+  meta?: MetaLink;
   email?: Partial<EmailSettings>;
   calls?: Partial<CallSettings>;
   /** The franchise fee in pounds. Used as the value of the Signed event. */

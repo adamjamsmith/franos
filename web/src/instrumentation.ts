@@ -8,8 +8,10 @@ export async function register() {
   if (holder.__franosTicker) return;
   const { sendDueForAllBrands } = await import("./email/deliver");
   const { runTimedWork } = await import("./calls/run");
+  const { sendMetaForAllBrands } = await import("./meta/run");
   holder.__franosTicker = setInterval(() => {
     sendDueForAllBrands().catch((error) => console.error("Email check failed", error));
     runTimedWork().catch((error) => console.error("Timed work failed", error));
+    sendMetaForAllBrands().catch((error) => console.error("Meta check failed", error));
   }, 60_000);
 }

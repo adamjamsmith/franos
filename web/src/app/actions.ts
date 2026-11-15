@@ -244,6 +244,8 @@ export async function updateSiteContent(form: FormData) {
     consentWording: text(form, "consentWording") || current.consentWording,
     whatsappWording: text(form, "whatsappWording") || current.whatsappWording,
     privacyText: text(form, "privacyText"),
+    // Only the dataset and the test code can be changed here. Going live is never a box on a screen.
+    meta: { ...(current.meta ?? {}), datasetId: text(form, "metaDatasetId").replace(/\D/g, ""), testCode: text(form, "metaTestCode").trim() },
     termsText: text(form, "termsText"),
     companyAddress: text(form, "companyAddress"),
     earningsNote: text(form, "earningsNote"),

@@ -121,6 +121,12 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
               className={inputClass}
             />
           </Field>
+          <Field label="Meta dataset ID">
+            <input name="metaDatasetId" inputMode="numeric" defaultValue={site.meta?.datasetId ?? ""} className={inputClass} />
+          </Field>
+          <Field label={site.meta?.live ? "Meta test code (not used: this brand is live)" : "Meta test code (events only reach Meta's Test events tab)"}>
+            <input name="metaTestCode" defaultValue={site.meta?.testCode ?? ""} className={inputClass} />
+          </Field>
           <Field label="Proof images (one per line: Image address | Caption). Leave the address out for a placeholder box">
             <textarea
               name="proofImages"
