@@ -4,7 +4,7 @@ General UK rules as understood in planning; **not legal advice**. Check with the
 
 ## Data protection (UK GDPR)
 - Each franchisor (Client) owns their leads; Franchise Right processes them. **A data processing agreement with every client**, including a clause allowing **anonymised, combined data** to be used to improve the service (cross-brand learning).
-- Data stored in the UK (Neon London; AWS London where possible).
+- The database is in the UK (Neon London). The server, email and backups are with AWS in Sweden (decision 107), which UK rules allow.
 - Privacy notice per client says what's collected, that **calls are recorded and analysed**, and how long data is kept.
 - Retention rules, deletion and export on request, audit log of who viewed, changed, exported or deleted what.
 - Strict client separation, tested automatically.
@@ -20,7 +20,7 @@ General UK rules as understood in planning; **not legal advice**. Check with the
 
 ## Consent and marketing (PECR)
 - Consent tick box with the exact wording and timestamp saved per lead.
-- Separate WhatsApp opt-in.
+- No WhatsApp tick (removed 16 Nov 2026, decision 111).
 - Unsubscribe in every email, plus Gmail/Yahoo **one-click unsubscribe**; a suppression list respected by every chain.
 - No chasing people who abandoned the form: drop-off tracking is anonymous and never stores what they typed.
 - **No cookie banner:** no Meta pixel loads before the form is submitted; the form's required tick box and small print cover sharing with Meta; events go from the server afterwards. Own page and video stats run without cookies. Wording needs a legal check, and a required tick is weaker consent than an optional one.

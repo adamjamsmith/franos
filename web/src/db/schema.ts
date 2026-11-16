@@ -388,6 +388,48 @@ export const calls = pgTable(
   ],
 );
 
+/**
+ * A recorded session with someone who is not a lead: a franchisee giving a testimonial, the franchisor
+ * being interviewed, or anything else worth recording for a brand. Booked from a shared link.
+ */
+export const recordingSessions = pgTable(
+  "recording_sessions",
+  {
+    id: id(),
+    clientId: clientId(),
+    kind: text("kind").notNull(),
+    firstName: text("first_name").notNull(),
+    lastName: text("last_name").notNull().default(""),
+    email: text("email").notNull(),
+    phone: text("phone"),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    status: text("status").notNull().default("booked"),
+    meetingId: text("meeting_id"),
+    meetingUrl: text("meeting_url"),
+    /** Filled in after the session, from the video-call service. */
+    durationMinutes: integer("duration_minutes"),
+    recordingUrl: text("recording_url"),
+    transcript: text("transcript"),
+    /** Each person's own sound file. Shape: { name, url }[]. */
+    soundFiles: jsonb("sound_files").notNull().default([]),
+    /** The permission the person ticked, word for word, and when. This is the permission held for any advert made from the session. */
+    consentWording: text("consent_wording").notNull(),
+    consentAt: timestamp("consent_at", { withTimezone: true }).notNull(),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    check("recording_sessions_kind", sql`${t.kind} in ('testimonial', 'franchisor', 'other')`),
+    check("recording_sessions_status", sql`${t.status} in ('booked', 'cancelled', 'happened', 'no_show', 'needs_look')`),
+    // One session per start time across every brand: the same person hosts them all.
+    uniqueIndex("recording_sessions_slot")
+      .on(t.startsAt)
+      .where(sql`${t.status} <> 'cancelled'`),
+    index("recording_sessions_client").on(t.clientId, t.startsAt),
+  ],
+);
+
 /** What a brand spent on ads in a month, typed in until the ad account is connected. */
 export const adSpend = pgTable(
   "ad_spend",

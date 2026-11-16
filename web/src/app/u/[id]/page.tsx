@@ -31,7 +31,7 @@ export default async function UnsubscribePage({ params, searchParams }: PageProp
       {query.done ? (
         <>
           <h1 className="text-2xl font-semibold">You are unsubscribed</h1>
-          <p>You will not get any more emails from {brand.name}.</p>
+          <p>You will not get any more emails from {brand.name}, apart from the details of a call you have booked.</p>
         </>
       ) : (
         <>

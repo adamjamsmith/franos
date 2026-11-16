@@ -5,6 +5,7 @@ import { emailSettingsFor } from "../email/render";
 import { baseUrl, type Deliver } from "../email/send";
 import { siteFor } from "../site/config";
 import { siteSession } from "../site/leads";
+import { busySessions } from "../sessions/busy";
 import { type CallEmailKind, leadCallEmail, outcomeReminderEmail, type ReminderKind, REMINDERS, staffCallEmail, type StaffEmailKind } from "./emails";
 import type { CallReport, MeetingProvider } from "./provider";
 import { callSettingsFor, type DaySlots, isOpenSlot, openSlots } from "./slots";
@@ -25,10 +26,12 @@ const fullName = (lead: Lead) => [lead.firstName, lead.lastName].filter(Boolean)
 
 /** Calls that block times: anything not cancelled, from yesterday onwards. */
 async function busyCalls(tx: Tx, now: Date) {
-  return tx
+  const booked = await tx
     .select({ id: calls.id, startsAt: calls.startsAt, endsAt: calls.endsAt })
     .from(calls)
     .where(and(ne(calls.status, "cancelled"), gte(calls.endsAt, new Date(now.getTime() - 24 * HOUR))));
+  // A recording session in any brand blocks the time as well: the same person hosts it.
+  return [...booked, ...(await busySessions(tx, now))];
 }
 
 /** The lead's booked call that has not finished yet, if they have one. */
@@ -404,7 +407,63 @@ export async function collectCall(db: Db, brand: Brand, deps: CallDeps, callId: 
     }
     return false;
   }
-  return finishCall(db, siteSession(brand.id), brand, deps, { callId, report, now });
+  const done = await finishCall(db, siteSession(brand.id), brand, deps, { callId, report, now });
+  if (done && report.attended) {
+    if (report.transcript) await dropCallVideo(deps, call.meetingId);
+    else if (deps.provider.waitsForCalls) await askForTranscriptLater(db, brand, call, now);
+  }
+  return done;
+}
+
+/**
+ * A lead call keeps its transcript and nothing else: once the transcript is saved, the video is removed
+ * from the video-call service. A failure here never undoes the call; the video simply stays where it is.
+ */
+async function dropCallVideo(deps: CallDeps, meetingId: string) {
+  try {
+    await deps.provider.dropVideo?.(meetingId);
+  } catch (error) {
+    console.error("Could not remove a call video from the video-call service", error);
+  }
+}
+
+async function askForTranscriptLater(db: Db, brand: Brand, call: Call, now: Date) {
+  if (now.getTime() >= call.endsAt.getTime() + 3 * HOUR) return;
+  await withSession(db, siteSession(brand.id), (tx) =>
+    tx.insert(jobs).values({
+      clientId: brand.id,
+      type: "call_transcript",
+      runAt: new Date(now.getTime() + 15 * 60_000),
+      payload: { callId: call.id },
+      dedupeKey: `transcript-${call.id}-${now.getTime()}`,
+    }),
+  );
+}
+
+/** The transcript can take a while after a call. Asks again for it, saves it when it is there, then removes the video. */
+export async function collectTranscript(db: Db, brand: Brand, deps: CallDeps, callId: string, now: Date = new Date()): Promise<boolean> {
+  const call = await withSession(db, siteSession(brand.id), async (tx) => {
+    const [row] = await tx.select().from(calls).where(eq(calls.id, callId));
+    return row;
+  });
+  if (!call || call.status !== "attended" || !call.meetingId) return false;
+  if (call.transcript) {
+    await dropCallVideo(deps, call.meetingId);
+    return true;
+  }
+  const report = await deps.provider.report(call.meetingId);
+  if (!report?.transcript) {
+    await askForTranscriptLater(db, brand, call, now);
+    return false;
+  }
+  await withSession(db, siteSession(brand.id), (tx) =>
+    tx
+      .update(calls)
+      .set({ transcript: report.transcript, recordingUrl: report.recordingUrl ?? call.recordingUrl })
+      .where(eq(calls.id, call.id)),
+  );
+  await dropCallVideo(deps, call.meetingId);
+  return true;
 }
 
 /** Reminds the consultant to answer "How did it go?", if the call still has no answers. Sent once. */

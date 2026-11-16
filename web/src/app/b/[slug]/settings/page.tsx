@@ -147,9 +147,6 @@ export default async function SettingsPage({ params, searchParams }: PageProps<"
           <Field label="Consent wording (next to the tick box; saved with every lead)">
             <textarea name="consentWording" rows={3} required defaultValue={site.consentWording} className={inputClass} />
           </Field>
-          <Field label="WhatsApp tick box wording">
-            <input name="whatsappWording" defaultValue={site.whatsappWording} className={inputClass} />
-          </Field>
           <Field label="Privacy notice">
             <textarea name="privacyText" rows={6} defaultValue={site.privacyText} className={inputClass} />
           </Field>

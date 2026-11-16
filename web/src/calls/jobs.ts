@@ -1,7 +1,7 @@
 import type { Db } from "../db/context";
 import type { JobHandler } from "../jobs/runner";
 import { sendHeldAlert } from "./alert";
-import { type Brand, type CallDeps, collectCall, sendOutcomeReminder, sendReminder } from "./calls";
+import { type Brand, type CallDeps, collectCall, collectTranscript, sendOutcomeReminder, sendReminder } from "./calls";
 
 /**
  * What the jobs runner does for each kind of timed call work.
@@ -24,6 +24,7 @@ export function callJobHandlers(
       sendReminder(db, brand, deps, { callId: p.callId, kind: p.kind, startsAt: p.startsAt }, now()),
     ),
     call_collect: withBrand((brand, deps, p) => collectCall(db, brand, deps, p.callId, now())),
+    call_transcript: withBrand((brand, deps, p) => collectTranscript(db, brand, deps, p.callId, now())),
     outcome_reminder: withBrand((brand, deps, p) => sendOutcomeReminder(db, brand, deps, p.callId)),
     call_alert: withBrand((brand, deps, p) => sendHeldAlert(db, brand, deps, p.leadId, now())),
   };

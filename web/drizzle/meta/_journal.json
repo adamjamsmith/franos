@@ -141,6 +141,20 @@
       "when": 1794756348079,
       "tag": "0019_email_blocked",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794833084501,
+      "tag": "0020_recording_sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794833090221,
+      "tag": "0021_recording_sessions_rls",
+      "breakpoints": true
     }
   ]
 }

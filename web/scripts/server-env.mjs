@@ -20,7 +20,7 @@ const read = (name) =>
 
 const address = process.argv[2];
 if (!address || !/^https?:\/\/[a-z0-9.:-]+$/i.test(address)) {
-  console.error("Give the address franOS is reached at, such as https://refresh.franchiseright.co.uk");
+  console.error("Give the address franOS is reached at, such as https://crm.franchiseright.co.uk");
   process.exit(1);
 }
 

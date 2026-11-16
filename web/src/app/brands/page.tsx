@@ -1,5 +1,6 @@
 import { asc, eq } from "drizzle-orm";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createBrand, signOut } from "@/app/actions";
 import { buttonClass, Field, inputClass, Notice, quietButtonClass } from "@/components/ui";
 import { appDb } from "@/db";
@@ -18,6 +19,9 @@ export default async function BrandsPage({ searchParams }: PageProps<"/brands">)
         tx.select().from(clients).orderBy(asc(clients.name)),
       )
     : await brandsFor(login.user.id);
+
+  // Someone on a single brand has nothing to choose: take them straight to it.
+  if (!login.user.isOwner && brands.length === 1) redirect(`/b/${brands[0].slug}`);
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-10">

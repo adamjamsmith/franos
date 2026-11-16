@@ -4,7 +4,7 @@ import type { SiteContent } from "../site/config";
 type Link = { label: string; url: string };
 
 /** The shared look of every call email: brand at the top, plain paragraphs, one button, then plain links. */
-function layout(input: { brandName: string; site: SiteContent; footer: string; subject: string; paragraphs: string[]; links: Link[] }): Rendered {
+export function layout(input: { brandName: string; site: SiteContent; footer: string; subject: string; paragraphs: string[]; links: Link[] }): Rendered {
   const [button, ...others] = input.links;
   const header = input.site.logoUrl
     ? `<img src="${escapeHtml(input.site.logoUrl)}" alt="${escapeHtml(input.brandName)}" height="36">`

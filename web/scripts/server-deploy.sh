@@ -10,7 +10,7 @@
 set -euo pipefail
 
 SERVER="${FRANOS_SERVER:-ubuntu@16.192.105.23}"
-ADDRESS="${FRANOS_ADDRESS:-https://refresh.franchiseright.co.uk}"
+ADDRESS="${FRANOS_ADDRESS:-https://crm.franchiseright.co.uk}"
 KEY="${FRANOS_SERVER_KEY:-$HOME/.ssh/franos_server}"
 run() { ssh -i "$KEY" -o ConnectTimeout=20 "$SERVER" "$@"; }
 

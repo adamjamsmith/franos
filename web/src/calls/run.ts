@@ -7,6 +7,7 @@ import type { Brand, CallDeps, Staff } from "./calls";
 import { callJobHandlers } from "./jobs";
 import { type MeetingProvider, standInZoom } from "./provider";
 import { zoomCredentialsFromEnv, zoomProvider } from "./zoom";
+import { appSessionDeps, sessionJobHandlers } from "../sessions/run";
 
 /**
  * Who is told about a brand's bookings and good-fit leads: its consultants.
@@ -48,13 +49,24 @@ export async function appCallDeps(brand: Pick<Brand, "id">): Promise<CallDeps> {
 /** Runs every piece of timed work that is due: reminders, held alerts, collecting finished calls. Run once a minute. */
 export async function runTimedWork(now: Date = new Date()) {
   const db = await appDb();
-  const handlers = callJobHandlers(
-    db,
-    async (clientId) => {
-      const [brand] = await (await adminDb()).select().from(clients).where(eq(clients.id, clientId));
-      return brand ? { brand, deps: await appCallDeps(brand) } : null;
-    },
-    () => now,
-  );
+  const brandOf = async (clientId: string) => (await (await adminDb()).select().from(clients).where(eq(clients.id, clientId)))[0];
+  const handlers = {
+    ...callJobHandlers(
+      db,
+      async (clientId) => {
+        const brand = await brandOf(clientId);
+        return brand ? { brand, deps: await appCallDeps(brand) } : null;
+      },
+      () => now,
+    ),
+    ...sessionJobHandlers(
+      db,
+      async (clientId) => {
+        const brand = await brandOf(clientId);
+        return brand ? { brand, deps: await appSessionDeps() } : null;
+      },
+      () => now,
+    ),
+  };
   return runDueJobs(db, handlers, now);
 }

@@ -91,7 +91,6 @@ export function SignUpCard({ brand, utm = {}, clickId = "" }: { brand: { slug: s
         action={submitSignUp}
         questions={formFor(brand).questions}
         consentWording={site.consentWording}
-        whatsappWording={site.whatsappWording}
         utm={utm}
         clickId={clickId}
         turnstileSiteKey={turnstileSiteKey()}

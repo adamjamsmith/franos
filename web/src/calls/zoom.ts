@@ -90,7 +90,8 @@ export function zoomProvider(credentials: ZoomCredentials, options: { host?: str
 
   type ZoomMeeting = { id: number; join_url: string; status?: string };
   type PastMeeting = { duration?: number; participants_count?: number };
-  type Recordings = { share_url?: string; recording_files?: { file_type?: string; recording_type?: string; download_url?: string; status?: string }[] };
+  type RecordingFile = { id?: string; file_type?: string; recording_type?: string; download_url?: string; play_url?: string; file_name?: string; status?: string };
+  type Recordings = { share_url?: string; recording_files?: RecordingFile[]; participant_audio_files?: RecordingFile[] };
 
   // A Zoom meeting's id is all digits. Calls booked while the stand-in was in use carry made-up ids that
   // Zoom has never heard of; those are left alone, so they are never mistaken for a missed call.
@@ -148,9 +149,14 @@ export function zoomProvider(credentials: ZoomCredentials, options: { host?: str
       // The recording and transcript can take a while to appear, and need a paid Zoom plan. Their absence is not an error.
       let recordingUrl: string | null = null;
       let transcript: string | null = null;
+      let soundFiles: { name: string; url: string }[] = [];
       try {
         const recordings = await call<Recordings>("GET", `/meetings/${meetingId}/recordings`);
         recordingUrl = recordings?.share_url ?? null;
+        soundFiles = (recordings?.participant_audio_files ?? []).flatMap((file, index) => {
+          const url = file.play_url ?? file.download_url;
+          return url ? [{ name: file.file_name?.trim() || `Person ${index + 1}`, url }] : [];
+        });
         const captions = recordings?.recording_files?.find((file) => file.file_type === "TRANSCRIPT" && file.download_url);
         if (captions?.download_url) {
           const file = await send(captions.download_url, { headers: { Authorization: `Bearer ${await pass()}` } });
@@ -159,7 +165,21 @@ export function zoomProvider(credentials: ZoomCredentials, options: { host?: str
       } catch (error) {
         if (!(error instanceof ZoomError)) throw error;
       }
-      return { attended: true, minutes: Math.max(1, Math.round(past.duration ?? 0)), recordingUrl, transcript };
+      return { attended: true, minutes: Math.max(1, Math.round(past.duration ?? 0)), recordingUrl, transcript, soundFiles };
+    },
+
+    // Goes to Zoom's bin, where it can be got back for 30 days. Needs the app to be allowed to delete recordings.
+    async dropVideo(meetingId) {
+      if (!isZoomId(meetingId)) return 0;
+      const recordings = await call<Recordings>("GET", `/meetings/${meetingId}/recordings`);
+      const videos = (recordings?.recording_files ?? []).filter((file) => file.file_type === "MP4" && file.id);
+      for (const file of videos) await call("DELETE", `/meetings/${meetingId}/recordings/${file.id}?action=trash`);
+      return videos.length;
+    },
+
+    async dropRecording(meetingId) {
+      if (!isZoomId(meetingId)) return;
+      await call("DELETE", `/meetings/${meetingId}/recordings?action=trash`);
     },
   };
 }

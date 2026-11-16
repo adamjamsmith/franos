@@ -96,7 +96,7 @@ describe("the real Zoom", () => {
     it("is attended, with its length, when two people were there, even with no recording yet", async () => {
       expect(
         await report({ "GET /meetings/7": { json: { id: 7, join_url: "x" } }, "GET /past_meetings/7": { json: { duration: 27, participants_count: 2 } }, "GET /meetings/7/recordings": { status: 404 } }),
-      ).toEqual({ attended: true, minutes: 27, recordingUrl: null, transcript: null });
+      ).toEqual({ attended: true, minutes: 27, recordingUrl: null, transcript: null, soundFiles: [] });
     });
 
     it("brings back the recording link and the transcript when Zoom has them", async () => {
@@ -107,14 +107,14 @@ describe("the real Zoom", () => {
         "GET https://zoom.us/rec/download/captions": { text: "WEBVTT\n\n1\n00:00:01.000 --> 00:00:03.000\nMike: Thanks for joining.\n\n2\n00:00:03.500 --> 00:00:05.000\nDana: Happy to be here." },
       });
       const result = await zoomProvider(credentials, { fetch: zoom.fetch }).report("7");
-      expect(result).toEqual({ attended: true, minutes: 27, recordingUrl: "https://zoom.us/rec/share/abc", transcript: "Mike: Thanks for joining.\nDana: Happy to be here." });
+      expect(result).toEqual({ attended: true, minutes: 27, recordingUrl: "https://zoom.us/rec/share/abc", transcript: "Mike: Thanks for joining.\nDana: Happy to be here.", soundFiles: [] });
       expect(zoom.sent.at(-1)!.headers.Authorization).toBe("Bearer pass-1");
     });
 
     it("still reports the call when the plan has no cloud recording", async () => {
       expect(
         await report({ "GET /meetings/7": { json: { id: 7, join_url: "x" } }, "GET /past_meetings/7": { json: { duration: 20, participants_count: 2 } }, "GET /meetings/7/recordings": { status: 400, json: { message: "Cloud recording is not available on this plan" } } }),
-      ).toEqual({ attended: true, minutes: 20, recordingUrl: null, transcript: null });
+      ).toEqual({ attended: true, minutes: 20, recordingUrl: null, transcript: null, soundFiles: [] });
     });
   });
 

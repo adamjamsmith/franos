@@ -17,7 +17,6 @@ type Props = {
   action: (state: SignUpState, form: FormData) => Promise<SignUpState>;
   questions: Question[];
   consentWording: string;
-  whatsappWording: string;
   utm: Record<string, string>;
   /** Meta's click code from the ad link, if the visitor came from an ad. */
   clickId?: string;
@@ -29,7 +28,7 @@ type Props = {
  * so drop-off can be measured. It never reports what was typed.
  * If something is wrong, everything typed stays in place and the wrong boxes turn red.
  */
-export function SignUpForm({ slug, action, questions, consentWording, whatsappWording, utm, clickId, turnstileSiteKey }: Props) {
+export function SignUpForm({ slug, action, questions, consentWording, utm, clickId, turnstileSiteKey }: Props) {
   const [state, submit, pending] = useActionState(action, emptySignUp);
   const formRef = useRef<HTMLFormElement>(null);
   const thanksRef = useRef<HTMLDivElement>(null);
@@ -155,10 +154,6 @@ export function SignUpForm({ slug, action, questions, consentWording, whatsappWo
         </label>
         {wrong("consent") && <span className={`${hint} mt-1 block`}>Please tick this box to agree before sending the form.</span>}
       </div>
-      <label className="flex items-start gap-3 text-xs leading-relaxed text-neutral-700">
-        <input type="checkbox" name="whatsapp" defaultChecked={value("whatsapp") === "on"} className="mt-0.5 h-5 w-5 shrink-0" />
-        <span>{whatsappWording}</span>
-      </label>
 
       {turnstileSiteKey && (
         <>

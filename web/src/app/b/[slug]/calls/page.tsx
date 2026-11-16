@@ -9,7 +9,9 @@ import { calls, leads } from "@/db/schema";
 import { ukDay } from "@/email/render";
 import { isDev } from "@/lib/dev-mailbox";
 import { requireBrand } from "@/lib/session";
+import { listSessions, personName as sessionPerson } from "@/sessions/sessions";
 import { runTimedNow } from "./actions";
+import { sessionState, SessionsView } from "./sessions-view";
 
 const line = "border-neutral-300 dark:border-neutral-700";
 const small = "text-[11px] leading-tight text-neutral-500 dark:text-neutral-400";
@@ -30,8 +32,17 @@ export default async function CallsPage({ params, searchParams }: PageProps<"/b/
   const now = new Date();
   const today = ukDay(now);
   const month = isMonth(query.month) ? query.month : monthOf(now);
+  // Recording sessions are the owner's alone.
+  const sessionsView = role === "owner" && query.view === "sessions";
   const listView = query.view === "list";
-  const here = listView ? `/b/${slug}/calls?view=list` : `/b/${slug}/calls?month=${month}`;
+  const here = sessionsView ? `/b/${slug}/calls?view=sessions` : listView ? `/b/${slug}/calls?view=list` : `/b/${slug}/calls?month=${month}`;
+  const sessions = role === "owner" ? await withSession(db, session, (tx) => listSessions(tx)) : [];
+  const sessionsByDay = new Map<string, typeof sessions>();
+  for (const row of sessions) {
+    if (row.status === "cancelled") continue;
+    const key = ukDay(row.startsAt);
+    sessionsByDay.set(key, [...(sessionsByDay.get(key) ?? []), row]);
+  }
 
   const rows = await withSession(db, session, (tx) =>
     tx
@@ -80,8 +91,8 @@ export default async function CallsPage({ params, searchParams }: PageProps<"/b/
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        <h2 className="mr-2 text-lg font-semibold">{listView ? "All calls" : monthLabel(month)}</h2>
-        {!listView && (
+        <h2 className="mr-2 text-lg font-semibold">{sessionsView ? "Sessions" : listView ? "All calls" : monthLabel(month)}</h2>
+        {!listView && !sessionsView && (
           <>
             <Link href={`/b/${slug}/calls?month=${shiftMonth(month, -1)}`} scroll={false} aria-label="Previous month" className={navButton}>
               ‹
@@ -95,14 +106,19 @@ export default async function CallsPage({ params, searchParams }: PageProps<"/b/
           </>
         )}
         <span className="ml-2 flex">
-          <Link href={`/b/${slug}/calls?month=${month}`} scroll={false} aria-current={listView ? undefined : "page"} className={`${navButton} rounded-r-none ${listView ? "" : chosen}`}>
+          <Link href={`/b/${slug}/calls?month=${month}`} scroll={false} aria-current={listView || sessionsView ? undefined : "page"} className={`${navButton} rounded-r-none ${listView || sessionsView ? "" : chosen}`}>
             Calendar
           </Link>
-          <Link href={`/b/${slug}/calls?view=list`} scroll={false} aria-current={listView ? "page" : undefined} className={`${navButton} -ml-px rounded-l-none ${listView ? chosen : ""}`}>
+          <Link href={`/b/${slug}/calls?view=list`} scroll={false} aria-current={listView ? "page" : undefined} className={`${navButton} -ml-px rounded-l-none ${role === "owner" ? "rounded-r-none" : ""} ${listView ? chosen : ""}`}>
             List
           </Link>
+          {role === "owner" && (
+            <Link href={`/b/${slug}/calls?view=sessions`} scroll={false} aria-current={sessionsView ? "page" : undefined} className={`${navButton} -ml-px rounded-l-none ${sessionsView ? chosen : ""}`}>
+              Sessions
+            </Link>
+          )}
         </span>
-        <span className={`${small} ml-auto`}>
+        <span className={`${small} ml-auto ${sessionsView ? "hidden" : ""}`}>
           {showRate === null ? "No calls have happened yet" : `Show rate ${showRate}% · ${showed} attended · ${noShows} no-show`}
         </span>
       </div>
@@ -121,7 +137,9 @@ export default async function CallsPage({ params, searchParams }: PageProps<"/b/
         </p>
       )}
 
-      {listView ? (
+      {sessionsView ? (
+        <SessionsView brand={access.client} sessions={sessions} now={now} />
+      ) : listView ? (
         <div className={`overflow-hidden rounded-md border text-sm ${line}`}>
           {rows.length === 0 && <p className={`${small} px-3 py-2`}>No calls.</p>}
           {[...upcoming, ...past].map((row) => {
@@ -179,6 +197,17 @@ export default async function CallsPage({ params, searchParams }: PageProps<"/b/
                         </Link>
                       );
                     })}
+                    {(sessionsByDay.get(day.key) ?? []).map((row) => (
+                      <Link
+                        key={row.id}
+                        href={`/b/${slug}/calls?view=sessions`}
+                        scroll={false}
+                        title={`Session: ${sessionPerson(row)} · ${ukWhen(row.startsAt)} · ${sessionState(row, now).says}`}
+                        className="block truncate rounded bg-sky-500/20 px-1.5 py-0.5 text-xs hover:ring-1 hover:ring-neutral-900 dark:hover:ring-white"
+                      >
+                        <span className="tabular-nums text-neutral-600 dark:text-neutral-300">{toClock(ukMinutes(row.startsAt))}</span> {sessionPerson(row)}
+                      </Link>
+                    ))}
                   </div>
                 </div>
               ))}
