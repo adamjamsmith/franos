@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 
 /** The small line icons used in the left-hand menu. */
-export type IconName = "board" | "leads" | "calls" | "numbers" | "emails" | "settings" | "site" | "switch" | "logout";
+export type IconName = "board" | "leads" | "calls" | "sessions" | "numbers" | "emails" | "settings" | "site" | "switch" | "logout";
 
 const shapes: Record<IconName, ReactNode> = {
   board: <path d="M4 5h4v14H4zM10 5h4v9h-4zM16 5h4v11h-4z" />,
@@ -12,6 +12,12 @@ const shapes: Record<IconName, ReactNode> = {
     </>
   ),
   calls: <path d="M5 4h3.500l1.700 4.300-2.200 1.400a11 11 0 005.300 5.300l1.400-2.200 4.300 1.700V18a2 2 0 01-2 2A13 13 0 014 7a2 2 0 011-3z" />,
+  sessions: (
+    <>
+      <rect x="3" y="6.500" width="12.500" height="11" rx="2" />
+      <path d="M15.500 10.500l5.500-3v9l-5.500-3" />
+    </>
+  ),
   numbers: <path d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   emails: (
     <>

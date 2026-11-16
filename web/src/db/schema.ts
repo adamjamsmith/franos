@@ -402,6 +402,8 @@ export const recordingSessions = pgTable(
     lastName: text("last_name").notNull().default(""),
     email: text("email").notNull(),
     phone: text("phone"),
+    /** For a testimonial: the franchise location the person runs, as they typed it. */
+    location: text("location"),
     startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
     endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
     status: text("status").notNull().default("booked"),
@@ -416,11 +418,13 @@ export const recordingSessions = pgTable(
     /** The permission the person ticked, word for word, and when. This is the permission held for any advert made from the session. */
     consentWording: text("consent_wording").notNull(),
     consentAt: timestamp("consent_at", { withTimezone: true }).notNull(),
+    /** False keeps the transcript and sound only: the video is removed from the video-call service once the transcript is saved. */
+    keepVideo: boolean("keep_video").notNull().default(true),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [
-    check("recording_sessions_kind", sql`${t.kind} in ('testimonial', 'franchisor', 'other')`),
+    check("recording_sessions_kind", sql`${t.kind} in ('testimonial', 'franchisor', 'other', 'meeting')`),
     check("recording_sessions_status", sql`${t.status} in ('booked', 'cancelled', 'happened', 'no_show', 'needs_look')`),
     // One session per start time across every brand: the same person hosts them all.
     uniqueIndex("recording_sessions_slot")

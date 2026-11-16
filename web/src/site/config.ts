@@ -60,10 +60,15 @@ export type CallSettings = {
  */
 export type MetaLink = { datasetId?: string; testCode?: string; live?: boolean; liveFrom?: string };
 
+/** When recording sessions can be booked from a link. The same shape as the hours for calls. */
+export type SessionHours = Pick<CallSettings, "days" | "startTime" | "endTime" | "lengthMinutes" | "gapMinutes" | "windowDays" | "noticeHours">;
+
 export type SiteContent = {
   meta?: MetaLink;
   email?: Partial<EmailSettings>;
   calls?: Partial<CallSettings>;
+  /** When each session booking link offers times: one set of hours per link. Anything not set falls back to the standard hours for that link. */
+  sessions?: Partial<Record<"testimonial" | "franchisor" | "other", Partial<SessionHours>>>;
   /** The franchise fee in pounds. Used as the value of the Signed event. */
   franchiseFee?: number;
   primaryColour: string;

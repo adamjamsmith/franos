@@ -11,19 +11,26 @@ import type { Outgoing } from "../src/email/send";
 import { runDueJobs } from "../src/jobs/runner";
 import { sessionJobHandlers } from "../src/sessions/run";
 import {
+  addSession,
   bookingCode,
   bookingCodeOk,
   bookSession,
   cancelSession,
   deleteSession,
+  givePermission,
+  hasPermission,
+  isBookableKind,
   listSessions,
   moveSession,
+  PERMISSION_PENDING,
   sessionConsentWording,
+  sessionSettingsFor,
   type SessionDeps,
   type SessionInput,
   sessionLinkOk,
   sessionPath,
   sessionSlots,
+  ukLocal,
 } from "../src/sessions/sessions";
 import { siteSession } from "../src/site/leads";
 import { type Admin, freshDb, seedTwoBrands } from "./helpers";
@@ -54,7 +61,7 @@ const input = (startsAt: Date, over: Partial<SessionInput> = {}): SessionInput =
   firstName: "Ali",
   lastName: "Khan",
   email: "Ali@Example.test",
-  phone: "",
+  location: "Nottingham",
   consent: true,
   consentWording: wording,
   startsAt,
@@ -144,7 +151,7 @@ describe("the booking link", () => {
 
 describe("booking a session", () => {
   it("offers hour-long sessions on weekdays, with a day's notice", async () => {
-    const days = await withSession(db, siteSession(seed.refresh.id), (tx) => sessionSlots(tx, seed.refresh, now));
+    const days = await withSession(db, siteSession(seed.refresh.id), (tx) => sessionSlots(tx, seed.refresh, now, "testimonial"));
     expect(days[0].day).toBe("2026-03-03"); // nothing today: a day's notice
     expect(days[0].slots.map(ukTime)).toEqual(["9:00am", "10:30am", "12:00pm", "1:30pm", "3:00pm"]);
   });
@@ -171,6 +178,28 @@ describe("booking a session", () => {
     expect(meetings).toEqual([]);
   });
 
+  it("gives each link its own hours: the owner's settings over the standard ones", () => {
+    expect(sessionSettingsFor(seed.refresh)).toMatchObject({ days: [1, 2, 3, 4, 5], startTime: "09:00", lengthMinutes: 60, noticeHours: 24 });
+    expect(sessionSettingsFor(seed.refresh, "franchisor")).toMatchObject({ days: [0, 1, 2, 3, 4, 5, 6], startTime: "08:00", endTime: "20:00", noticeHours: 0 });
+    const own = { ...seed.refresh, site: { sessions: { testimonial: { days: [2, 4], startTime: "10:00", lengthMinutes: 45 } } } };
+    expect(sessionSettingsFor(own, "testimonial")).toMatchObject({ days: [2, 4], startTime: "10:00", endTime: "17:00", lengthMinutes: 45, noticeHours: 24 });
+    expect(sessionSettingsFor(own, "other")).toMatchObject({ days: [0, 1, 2, 3, 4, 5, 6], noticeHours: 0 });
+  });
+
+  it("lets a franchisor interview be booked at no notice, outside testimonial hours", async () => {
+    const saturdayEvening = at("2026-03-07T18:00:00Z");
+    expect(await book(saturdayEvening)).toEqual({ ok: false, reason: "time" });
+    expect((await book(saturdayEvening, { kind: "franchisor" })).ok).toBe(true);
+  });
+
+  it("asks a franchisee for their franchise location, and nobody else", async () => {
+    expect(await book(wed9, { location: " " })).toEqual({ ok: false, reason: "details" });
+    const testimonial = await book(wed9, { location: " Nottingham " });
+    expect(testimonial.ok && (await one(testimonial.sessionId)).location).toBe("Nottingham");
+    const interview = await book(thu9, { kind: "franchisor", location: "" });
+    expect(interview.ok && (await one(interview.sessionId)).location).toBeNull();
+  });
+
   it("refuses a time that is not on offer", async () => {
     expect(await book(at("2026-03-04T09:15:00Z"))).toEqual({ ok: false, reason: "time" });
     expect(await book(at("2026-03-02T15:00:00Z"))).toEqual({ ok: false, reason: "time" }); // under a day's notice
@@ -186,7 +215,7 @@ describe("one person hosts everything", () => {
   it("does not offer a time taken by a session in another brand", async () => {
     await book(wed9, {}, seed.oven);
     expect(await book(wed9)).toEqual({ ok: false, reason: "time" });
-    const days = await withSession(db, siteSession(seed.refresh.id), (tx) => sessionSlots(tx, seed.refresh, now));
+    const days = await withSession(db, siteSession(seed.refresh.id), (tx) => sessionSlots(tx, seed.refresh, now, "testimonial"));
     expect(days.find((d) => d.day === "2026-03-04")!.slots.map(ukTime)).not.toContain("9:00am");
   });
 
@@ -361,6 +390,84 @@ describe("a lead call keeps its transcript and nothing else", () => {
     reports.m1 = happened({ soundFiles: [] });
     await run(afterCall);
     expect(await theCall()).toMatchObject({ status: "attended" });
+  });
+});
+
+describe("a session the owner books for someone", () => {
+  const today4pm = at("2026-03-02T16:00:00Z");
+  const add = (startsAt: Date, over: Partial<Parameters<typeof addSession>[4]> = {}) =>
+    addSession(db, owner(), seed.refresh, deps, { kind: "franchisor", firstName: "John", lastName: "English", email: "john.e@example.test", startsAt, now, ...over });
+
+  it("can be today, at any time, and invites the person to agree on their own page", async () => {
+    const result = await add(today4pm, { minutes: 90 });
+    if (!result.ok) throw new Error("not added");
+    const session = await one(result.sessionId);
+    expect(session).toMatchObject({ kind: "franchisor", status: "booked", meetingId: "m1", consentWording: PERMISSION_PENDING });
+    expect(session.endsAt).toEqual(at("2026-03-02T17:30:00Z"));
+    expect(hasPermission(session)).toBe(false);
+    expect(subjectsTo("john.e@example.test")).toEqual(["Your interview is booked: Monday 2 March at 4:00pm"]);
+    expect(outbox[0].text).toContain("tick the box to agree");
+    expect(subjectsTo(adam.email)).toEqual([]); // the owner booked it, so is not told
+  });
+
+  it("saves the permission, word for word, when the person ticks the box", async () => {
+    const result = await add(today4pm);
+    if (!result.ok) throw new Error("not added");
+    const later = at("2026-03-02T15:55:00Z");
+    expect(await givePermission(db, seed.refresh, { sessionId: result.sessionId, wording, now: later })).toBe(true);
+    const session = await one(result.sessionId);
+    expect(session.consentWording).toBe(wording);
+    expect(session.consentAt).toEqual(later);
+    // It cannot be overwritten afterwards.
+    expect(await givePermission(db, seed.refresh, { sessionId: result.sessionId, wording: "something else", now: later })).toBe(false);
+  });
+
+  it("is refused when it clashes with another session or a lead call, or has already passed", async () => {
+    await add(today4pm);
+    expect(await add(at("2026-03-02T16:30:00Z"), { email: "other@example.test" })).toEqual({ ok: false, reason: "taken" });
+    expect(await add(at("2026-03-02T06:00:00Z"))).toEqual({ ok: false, reason: "time" });
+    expect(await add(at("2026-03-02T12:00:00Z"), { firstName: "" })).toEqual({ ok: false, reason: "details" });
+  });
+
+  it("cannot be added by the consultant", async () => {
+    await expect(addSession(db, consultant(), seed.refresh, deps, { kind: "other", firstName: "X", lastName: "", email: "x@example.test", startsAt: today4pm, now })).rejects.toThrow();
+    expect(await all()).toHaveLength(0);
+  });
+
+  it("keeps only the transcript of a working meeting, and asks for no permission", async () => {
+    const result = await add(today4pm, { kind: "meeting", firstName: "Mike", email: "mike@example.test" });
+    if (!result.ok) throw new Error("not added");
+    const booked = await one(result.sessionId);
+    expect(booked).toMatchObject({ kind: "meeting", keepVideo: false });
+    expect(hasPermission(booked)).toBe(true);
+    expect(outbox[0].subject).toBe("Your meeting is booked: Monday 2 March at 4:00pm");
+    expect(outbox[0].text).toContain("so we have notes of what was said");
+    expect(outbox[0].text).not.toContain("tick the box");
+
+    reports.m1 = happened();
+    await run(at("2026-03-02T17:10:00Z"));
+    expect(await one(result.sessionId)).toMatchObject({ status: "happened" });
+    expect((await one(result.sessionId)).transcript).toContain("one van");
+    expect(meetings).toEqual(["create m1", "drop video m1"]);
+  });
+
+  it("lets the owner choose either way: a meeting with its video, or an interview without", async () => {
+    const withVideo = await add(today4pm, { kind: "meeting", keepVideo: true });
+    const without = await add(at("2026-03-03T16:00:00Z"), { keepVideo: false });
+    if (!withVideo.ok || !without.ok) throw new Error("not added");
+    expect((await one(withVideo.sessionId)).keepVideo).toBe(true);
+    expect((await one(without.sessionId)).keepVideo).toBe(false);
+  });
+
+  it("has no booking link for a meeting", () => {
+    expect(isBookableKind("meeting")).toBe(false);
+    expect(isBookableKind("testimonial")).toBe(true);
+  });
+
+  it("reads a typed date and time as UK time, winter and summer", () => {
+    expect(ukLocal("2026-03-02T16:00")).toEqual(at("2026-03-02T16:00:00Z"));
+    expect(ukLocal("2026-07-01T16:00")).toEqual(at("2026-07-01T15:00:00Z"));
+    expect(ukLocal("not a date")).toBeNull();
   });
 });
 

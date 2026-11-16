@@ -1,19 +1,24 @@
 import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
-import { ukDate, ukTime, ukWhen } from "@/calls/time";
+import { ukWhen } from "@/calls/time";
+import { calendarDays } from "@/components/site/booking";
+import { SessionMove } from "@/components/site/session-move";
 import { appDb } from "@/db";
 import { withSession } from "@/db/context";
 import { recordingSessions } from "@/db/schema";
 import { sign } from "@/email/render";
-import { KIND_LABELS, sessionLinkOk, sessionSlots, type SessionKind } from "@/sessions/sessions";
+import { emailSettingsFor } from "@/email/render";
+import { hasPermission, KIND_LABELS, sessionConsentWording, sessionLinkOk, sessionSlots, type SessionKind } from "@/sessions/sessions";
+import { siteFor } from "@/site/config";
 import { publicBrand } from "@/site/brand";
 import { siteSession } from "@/site/leads";
-import { cancelMine, moveMine } from "../../actions";
+import { agreeMine, cancelMine, moveMine } from "../../actions";
 
 const notices: Record<string, string> = {
   booked: "Your session is booked. We have emailed you the details.",
   moved: "Your session has been moved. We have emailed you the new time.",
   cancelled: "Your session has been cancelled.",
+  agreed: "Thank you. That is saved.",
 };
 const problems: Record<string, string> = {
   taken: "Sorry, someone has just taken that time. Please pick another.",
@@ -36,7 +41,7 @@ export default async function BookedSessionPage({ params, searchParams }: PagePr
     const [session] = await tx.select().from(recordingSessions).where(eq(recordingSessions.id, id));
     if (!session) return null;
     const open = session.status === "booked" && session.startsAt > now;
-    return { session, open, days: open ? await sessionSlots(tx, brand, now, session.id) : [] };
+    return { session, open, days: open ? await sessionSlots(tx, brand, now, session.kind, session.id) : [] };
   });
   if (!found) notFound();
   const { session, open, days } = found;
@@ -51,7 +56,7 @@ export default async function BookedSessionPage({ params, searchParams }: PagePr
   );
 
   return (
-    <div className="mx-auto flex max-w-xl flex-col gap-5 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+    <div className="mx-auto flex max-w-3xl flex-col gap-5 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
       {done && <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900">{done}</p>}
       {problem && <p className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">{problem}</p>}
       <div>
@@ -67,6 +72,22 @@ export default async function BookedSessionPage({ params, searchParams }: PagePr
         )}
       </div>
 
+      {session.status !== "cancelled" && !hasPermission(session) && (
+        <form action={agreeMine} className="flex flex-col gap-3 rounded-md border border-amber-300 bg-amber-50 p-3">
+          {hidden}
+          <label className="flex items-start gap-3 text-sm leading-relaxed text-neutral-800">
+            <input type="checkbox" name="consent" required className="mt-0.5 h-5 w-5 shrink-0" />
+            <span>
+              {sessionConsentWording(brand.name, emailSettingsFor(brand.name, siteFor(brand)).fromAddress)}{" "}
+              <a href={`/site/${slug}/privacy`} target="_blank" className="underline">
+                Privacy notice
+              </a>
+            </span>
+          </label>
+          <button className="self-start rounded-full bg-[var(--brand)] px-5 py-2.5 font-semibold text-white hover:opacity-90">I agree</button>
+        </form>
+      )}
+
       {open && (
         <>
           <p className="flex flex-wrap gap-x-5 gap-y-2">
@@ -79,27 +100,9 @@ export default async function BookedSessionPage({ params, searchParams }: PagePr
               Add it to my calendar
             </a>
           </p>
-          <form action={moveMine} className="flex flex-wrap items-end gap-3 border-t border-neutral-200 pt-4">
-            {hidden}
-            <label className="min-w-0 flex-1">
-              <span className="mb-1 block text-sm font-medium">Move it to another time</span>
-              <select name="startsAt" required defaultValue="" className="w-full rounded-md border border-neutral-300 bg-white px-3 py-2.5">
-                <option value="" disabled>
-                  Pick a time...
-                </option>
-                {days.map((day) => (
-                  <optgroup key={day.day} label={ukDate(day.slots[0])}>
-                    {day.slots.map((slot) => (
-                      <option key={slot.toISOString()} value={slot.toISOString()}>
-                        {ukDate(slot)}, {ukTime(slot)}
-                      </option>
-                    ))}
-                  </optgroup>
-                ))}
-              </select>
-            </label>
-            <button className="rounded-full border border-neutral-400 px-5 py-2.5 font-semibold hover:bg-neutral-100">Move session</button>
-          </form>
+          <div className="border-t border-neutral-200 pt-4">
+            <SessionMove action={moveMine} hidden={{ slug, sessionId: session.id, s: signature }} days={calendarDays(days)} />
+          </div>
           <form action={cancelMine}>
             {hidden}
             <button className="text-sm text-neutral-600 underline">Cancel this session</button>

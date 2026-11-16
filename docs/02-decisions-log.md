@@ -40,7 +40,7 @@ All decided by Adam on 14 November 2026 unless noted. Add new decisions at the b
 ## People and access
 | # | Decision | Notes |
 |---|---|---|
-| 20 | Three roles: **Owner** (Franchise Right, everything), **Client** (brand owner / master licence holder, all of their brand's data), **Consultant** (works the leads, takes the calls; no export or delete) | Refresh: John English = Client, Mike = Consultant |
+| 20 | Three roles: **Owner** (Franchise Right, everything), **Client** (brand owner / master licence holder, all of their brand's data), **Consultant** (works the leads, takes the calls; no export or delete) | Refresh: Paul English = Client, Mike = Consultant |
 | 21 | Consultants see **all** the brand's leads. **No lead assignment for now.** One consultant per brand to start | Assignment later if needed |
 
 ## Avatar, funnel and ads
@@ -75,7 +75,7 @@ All decided by Adam on 14 November 2026 unless noted. Add new decisions at the b
 | 40 | Separate email sending reputation per client, with automatic pause per brand | |
 | 41 | Build starts with three agents: Planner, Tester, Reviewer. Others join when there is content or data for them | |
 | 42 | Data protection paperwork (DPIA, sub-processor list, lawful basis) drafted by Claude for a human to check and sign | |
-| 43 | Ali's core message for Refresh: the franchise is a way into renovation that he could not have done alone. Earnings figures still need checking with John before use | |
+| 43 | Ali's core message for Refresh: the franchise is a way into renovation that he could not have done alone. Earnings figures still need checking with Paul before use | |
 
 | 44 | **Refresh Renovation launches 16 December 2026 on franOS v2.** Aim: bulk of the thin version set up as an alpha within days, then testing | |
 | 45 | **Timed work runs from a jobs table in our own database, checked every minute** | Simple, visible, easy to cancel |
@@ -148,5 +148,7 @@ All decided by Adam on 14 November 2026 unless noted. Add new decisions at the b
 | 112 | **The team signs in at `crm.franchiseright.co.uk`, for every brand. Each brand's public pages and email links will sit on the brand's own domain.** Until that domain exists and the per-brand address is built, public pages and email links also use the crm address. `refresh.franchiseright.co.uk` stays as the email sending domain and the address for Amazon's bounce reports | Adam, 16 Nov 2026: the CRM serves every brand, so it should not carry one brand's name |
 | 113 | **Lead calls keep the transcript only; testimonial and franchisor sessions keep everything.** A lead call is still recorded by Zoom so that a transcript exists, then franOS saves the transcript and deletes the recording from Zoom. Sessions with franchisees and franchisors keep the video, the combined sound file and a sound file per person. Built 16 Nov 2026, with the franos Zoom app allowed to delete recordings the same day. The sound file of a lead call stays in Zoom as a backup for now. Before real volume, franOS moves recordings to Amazon storage and clears them from Zoom, because Zoom Pro only holds about 5 GB | Adam, 16 Nov 2026: lead-call video is not needed and would fill Zoom's storage; the transcript is what the analysis uses |
 | 114 | **Recording sessions approved and built** (`docs/21-recording-sessions-spec.md`): a booking link per brand for a testimonial, a franchisor interview or another recording; 60 minutes; Monday to Friday 9am to 5pm; the video stays in Zoom with the link in franOS; one required permission tick; recordings kept while in use, looked at every 12 months, deleted on request. A session blocks lead-call times in every brand and the other way round, because one person hosts them all for now | Adam, 16 Nov 2026, after testing Zoom Pro recording the same day. Replaces Calendly for sessions |
+| 115 | **The owner can set up any recorded call from franOS, and choose what is kept.** Sessions gain a fourth kind, Meeting (a working call with the consultant, a colleague or the franchisor), and each owner-added session is either "keep video" or "transcript only". A meeting defaults to transcript only and asks for no advert permission; everything else defaults to keeping its video. The owner can add a session at any time, including the same day | Adam, 16 Nov 2026: some calls only need notes, some need the video, and some are already arranged so a booking link is no use |
+| 116 | **The recording-session booking pages are open to the outside; everything else on the server still answers only to Adam's connection.** Open: `/site/<brand>/session/...` and the pages' own styling and scripts. Each booking link carries a code, so the pages cannot be guessed. Checked from outside on 16 Nov: the booking page opened with its code, a made-up code gave "not found", and the login, the brand pages, the privacy page and the team screens were all refused | Adam, 16 Nov 2026, so that Paul English and franchisees can book sessions from a link before the public pages go live |
 
-**Open:** who checks the legal wording and paperwork; real figures and support details from John English; Refresh's content (interviews, VSL, prospectus, emails).
+**Open:** who checks the legal wording and paperwork; real figures and support details from Paul English; Refresh's content (interviews, VSL, prospectus, emails).

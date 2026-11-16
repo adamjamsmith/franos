@@ -54,7 +54,7 @@ Recording calls, analysing them with AI and scoring people is exactly the kind o
 ### A6. Check the offer before spending on the funnel
 From Ali's interview, as far as the auto-transcript shows: about £250k revenue in year two at roughly 9% net, six months before the first project, and criticism of the franchisor's marketing guidance and hand-holding. The avatar is a senior person with savings who will ask hard questions about earnings and support.
 
-franOS can find the right people and take them down the best path. It cannot make the numbers attractive. **Recommend:** before launch, get real franchisee figures and the current support package from John English, and decide what can honestly be claimed. This also protects against earnings claims that cannot be backed up.
+franOS can find the right people and take them down the best path. It cannot make the numbers attractive. **Recommend:** before launch, get real franchisee figures and the current support package from Paul English, and decide what can honestly be claimed. This also protects against earnings claims that cannot be backed up.
 
 ---
 
@@ -105,4 +105,4 @@ The Strategist and Insights analyst have nothing to work on until leads exist, a
 4. GitHub for the code
 5. KPI dashboard: Google Sheet for now, or franOS from the start
 6. Who gives legal advice on consent, the DPIA and the client agreement (A4, A5)
-7. Real franchisee figures and support details from John English (A6)
+7. Real franchisee figures and support details from Paul English (A6)

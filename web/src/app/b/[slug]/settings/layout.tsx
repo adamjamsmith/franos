@@ -11,6 +11,7 @@ export default async function SettingsLayout({ children, params }: LayoutProps<"
           { href: `/b/${slug}/settings/form`, label: "Form" },
           { href: `/b/${slug}/settings/media`, label: "Media" },
           { href: `/b/${slug}/settings/calls`, label: "Calls" },
+          { href: `/b/${slug}/settings/sessions`, label: "Sessions" },
           { href: `/b/${slug}/settings/emails`, label: "Emails" },
           { href: `/b/${slug}/settings/people`, label: "People" },
         ]}

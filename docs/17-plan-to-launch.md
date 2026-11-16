@@ -28,7 +28,7 @@ From `11-your-setup-checklist.md`. These are the critical path, because email ap
 | B4 | ~~Zoom~~ **Open 15 Nov:** Franchise Right's own account (free plan), with the franos app created and its codes encrypted in AWS Parameter Store (decisions 102 and 103). **Pro from 16 Nov,** with the recording settings set and tested the same day: two test meetings recorded, giving a speaker-view video, a combined sound file, a sound file per person and a transcript. Still to do: add the consultant as a user | Real meeting links, recordings and transcripts |
 | B5 | ~~Meta~~ **Test dataset open 15 Nov** under Franchise Right ("franOS test"), with its token encrypted in AWS. Still to do per brand: its own dataset, and the client adding Franchise Right as a partner on their ad account and Page | Lead and Schedule events; ad spend |
 | B6 | ~~Who checks the legal wording~~ **Decided 15 Nov (decision 110):** Claude drafts, Adam signs off, no lawyer for now. Draft 1 is `docs/20-legal-wording.md`. Adam's decisions made 16 Nov (decision 111). Still to do: each brand's company details, loading the notice into franOS (D6), building timed deletion, then the data agreement with each client and the risk assessment | Consent tick, privacy notice, call recording, "I saw you opened..." emails |
-| B7 | **John English:** real figures, franchise fee, support details | Needed for the prospectus, the form and the Signed event value |
+| B7 | **Paul English:** real figures, franchise fee, support details | Needed for the prospectus, the form and the Signed event value |
 
 ### C. Going live (Claude, as each account arrives)
 | # | Job | Depends on |

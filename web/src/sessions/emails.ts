@@ -20,10 +20,14 @@ export type SessionEmailInput = {
   when: string;
   minutes: number;
   joinUrl: string | null;
+  /** Whether the person has ticked the permission box. Someone the owner booked in has not yet. */
+  agreed: boolean;
+  /** A working meeting: recorded for notes, with no permission to ask for. */
+  notesOnly?: boolean;
 };
 
 const RECORDED = "The session is recorded on video, as you agreed when you booked.";
-const LABELS: Record<SessionKind, string> = { testimonial: "testimonial", franchisor: "interview", other: "recording session" };
+const LABELS: Record<SessionKind, string> = { testimonial: "testimonial", franchisor: "interview", other: "recording session", meeting: "meeting" };
 
 export const sessionManageLink = (baseUrl: string, slug: string, sessionId: string) =>
   `${baseUrl}/site/${slug}/session/booked/${sessionId}?s=${sign(`session|${sessionId}`)}`;
@@ -37,19 +41,25 @@ export function sessionEmail(kind: SessionEmailKind, input: SessionEmailInput): 
   const join = input.joinUrl ? [{ label: "Join on Zoom", url: input.joinUrl }] : [];
   const calendar = { label: "Add it to my calendar", url: sessionCalendarLink(input.baseUrl, input.slug, input.sessionId) };
   const base = { brandName: input.brandName, site: input.site, footer: input.footer };
+  const recorded = input.notesOnly
+    ? "The meeting is recorded, so we have notes of what was said."
+    : input.agreed
+      ? RECORDED
+      : "The session is recorded on video. Before we start, please open the session page below and tick the box to agree to that.";
+  if (!input.agreed) manage.label = "Open the session page";
   switch (kind) {
     case "confirmation":
       return layout({
         ...base,
         subject: `Your ${what} is booked: ${input.when}`,
-        paragraphs: [hi, `Your ${what} with ${input.brandName} is booked for ${input.when}. It is on Zoom and takes about ${input.minutes} minutes.`, RECORDED, "Somewhere quiet with good light on your face works best."],
+        paragraphs: [hi, `Your ${what} with ${input.brandName} is booked for ${input.when}. It is on Zoom and takes about ${input.minutes} minutes.`, recorded, ...(input.notesOnly ? [] : ["Somewhere quiet with good light on your face works best."])],
         links: [...join, calendar, manage],
       });
     case "changed":
       return layout({
         ...base,
         subject: `Your ${what} has moved: ${input.when}`,
-        paragraphs: [hi, `Your ${what} with ${input.brandName} is now at ${input.when}.`, RECORDED],
+        paragraphs: [hi, `Your ${what} with ${input.brandName} is now at ${input.when}.`, recorded],
         links: [...join, calendar, manage],
       });
     case "cancelled":
@@ -63,14 +73,14 @@ export function sessionEmail(kind: SessionEmailKind, input: SessionEmailInput): 
       return layout({
         ...base,
         subject: `Tomorrow: your ${what} with ${input.brandName}`,
-        paragraphs: [hi, `A reminder that your ${what} is on ${input.when}.`, RECORDED],
+        paragraphs: [hi, `A reminder that your ${what} is on ${input.when}.`, recorded],
         links: [...join, manage],
       });
     case "reminder_hour":
       return layout({
         ...base,
         subject: `In an hour: your ${what} with ${input.brandName}`,
-        paragraphs: [hi, `Your ${what} starts at ${input.when}.`, RECORDED],
+        paragraphs: [hi, `Your ${what} starts at ${input.when}.`, recorded],
         links: [...join, manage],
       });
   }
@@ -86,6 +96,6 @@ export function hostSessionEmail(kind: "confirmation" | "changed" | "cancelled",
     footer: input.footer,
     subject: `${input.brandName} ${what} ${said}: ${input.personName}, ${input.when}`,
     paragraphs: [`${input.personName} has ${said} a ${what} for ${input.brandName}: ${input.when}.`],
-    links: kind === "cancelled" ? [] : [{ label: "Open Sessions", url: `${input.baseUrl}/b/${input.slug}/calls?view=sessions` }],
+    links: kind === "cancelled" ? [] : [{ label: "Open Sessions", url: `${input.baseUrl}/b/${input.slug}/sessions` }],
   });
 }

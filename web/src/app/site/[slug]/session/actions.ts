@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { appDb } from "@/db";
 import { emailSettingsFor } from "@/email/render";
 import { appSessionDeps } from "@/sessions/run";
-import { bookingCodeOk, bookSession, cancelSession, isSessionKind, moveSession, sessionConsentWording, sessionLinkOk, sessionPath } from "@/sessions/sessions";
+import { bookingCodeOk, bookSession, cancelSession, givePermission, isBookableKind, moveSession, sessionConsentWording, sessionLinkOk, sessionPath } from "@/sessions/sessions";
 import { publicBrand } from "@/site/brand";
 import { siteFor } from "@/site/config";
 import { siteSession } from "@/site/leads";
@@ -14,7 +14,7 @@ const isId = (value: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4
 
 export type SessionFormState = {
   problem?: "details" | "consent" | "time" | "taken";
-  values: { firstName: string; lastName: string; email: string; phone: string; startsAt: string; consent: boolean };
+  values: { firstName: string; lastName: string; email: string; location: string; startsAt: string; consent: boolean };
 };
 
 /** Books a session from a booking link. On a problem, everything typed is handed back so nothing is lost. */
@@ -22,13 +22,13 @@ export async function bookFromLink(_: SessionFormState, form: FormData): Promise
   const slug = text(form, "slug");
   const kind = text(form, "kind");
   const brand = await publicBrand(slug);
-  if (!isSessionKind(kind) || !bookingCodeOk(brand.id, kind, text(form, "k"))) redirect(`/site/${slug}`);
+  if (!isBookableKind(kind) || !bookingCodeOk(brand.id, kind, text(form, "k"))) redirect(`/site/${slug}`);
 
   const values = {
     firstName: text(form, "firstName"),
     lastName: text(form, "lastName"),
     email: text(form, "email"),
-    phone: text(form, "phone"),
+    location: text(form, "location"),
     startsAt: text(form, "startsAt"),
     consent: form.get("consent") === "on",
   };
@@ -64,6 +64,16 @@ export async function moveMine(form: FormData) {
   const result = await moveSession(await appDb(), siteSession(brand.id), brand, await appSessionDeps(), { sessionId, startsAt });
   const outcome = result.ok ? "done=moved" : `problem=${result.reason === "taken" ? "taken" : "time"}`;
   redirect(`${sessionPath(slug, sessionId)}&${outcome}`);
+}
+
+/** The person ticks the permission box for a session the owner booked for them. */
+export async function agreeMine(form: FormData) {
+  const { slug, sessionId, brand } = await mine(form);
+  if (form.get("consent") === "on") {
+    const wording = sessionConsentWording(brand.name, emailSettingsFor(brand.name, siteFor(brand)).fromAddress);
+    await givePermission(await appDb(), brand, { sessionId, wording });
+  }
+  redirect(`${sessionPath(slug, sessionId)}&done=agreed`);
 }
 
 /** The person cancels their own session. */

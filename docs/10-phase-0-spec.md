@@ -13,7 +13,7 @@
 ## What you will be able to do when it's done
 1. Open a private web address and log in as **Owner**, with a two-step code.
 2. Create a client (Refresh Renovation) and fill in its settings: name, colours, logo, consultant, target cost per signing, avatar type.
-3. Invite John as **Client** and Mike as **Consultant**. Each sees only Refresh Renovation.
+3. Invite Paul as **Client** and Mike as **Consultant**. Each sees only Refresh Renovation.
 4. See an empty leads list, ready for Step 1.
 5. **Switch between brands.** As Owner you see a list of every franchise opportunity and pick one; everything on screen changes to that brand. A consultant who works for two brands gets the same switcher, limited to those two. Adding a new brand is a form, not a rebuild.
 

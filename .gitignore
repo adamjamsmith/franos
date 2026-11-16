@@ -1,2 +1,5 @@
 # Personal Claude settings for this computer only (permission rules). Not shared.
 .claude/settings.local.json
+
+# Client summaries built from confidential material (NDA): kept on this computer only
+clients/*/what-we-know.md

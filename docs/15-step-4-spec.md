@@ -133,7 +133,7 @@ A new Numbers tab per brand, for a chosen period: this month, last month, the la
 3. **The reasons for Not going ahead.** Anything to add or reword?
 4. **Ad spend typed in once a month** until Meta is connected. OK, or would you want it weekly?
 5. **The franchise fee for the Signed event.** The avatar card says about £35,000 for Refresh. Is that the figure to use?
-6. **Who sees what:** John (client) sees the board and the numbers, including cost per signing, but cannot change anything. OK?
+6. **Who sees what:** Paul (client) sees the board and the numbers, including cost per signing, but cannot change anything. OK?
 
 Adam approved all six points as suggested on 14 November 2026. The franchise fee (point 5) was not confirmed as a figure, so it is a setting on the Numbers tab and is empty until typed in.
 

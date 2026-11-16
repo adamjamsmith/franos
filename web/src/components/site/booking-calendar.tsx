@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { SlotPicker, type CalendarDay } from "./slot-picker";
 
-export type CalendarDay = { day: string; label: string; slots: { iso: string; label: string }[] };
+export type { CalendarDay };
 
 type Props = {
   action: (form: FormData) => void;
@@ -17,10 +18,6 @@ type Props = {
   /** Where "Not you?" leads: the sign-up form. */
   formLink: string;
 };
-
-const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
-const pad = (n: number) => String(n).padStart(2, "0");
 
 function ConfirmButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -41,7 +38,6 @@ function ConfirmButton({ label }: { label: string }) {
  */
 export function BookingCalendar({ action, hidden, days, minutes, person, confirmLabel, formLink }: Props) {
   const [selectedDay, setSelectedDay] = useState(days[0]?.day ?? "");
-  const [month, setMonth] = useState((days[0]?.day ?? "").slice(0, 7));
   const [time, setTime] = useState("");
   const [confirming, setConfirming] = useState(false);
   const confirmRef = useRef<HTMLFormElement>(null);
@@ -55,110 +51,25 @@ export function BookingCalendar({ action, hidden, days, minutes, person, confirm
     return <p className="text-sm text-neutral-600">No times are free in the next few days. Reply to any of our emails and we will find one.</p>;
   }
 
-  const byDay = new Map(days.map((d) => [d.day, d]));
-  const day = byDay.get(selectedDay) ?? days[0];
+  const day = days.find((d) => d.day === selectedDay) ?? days[0];
   const slot = day.slots.find((s) => s.iso === time);
-  const firstMonth = days[0].day.slice(0, 7);
-  const lastMonth = days[days.length - 1].day.slice(0, 7);
-  const [year, monthNumber] = month.split("-").map(Number);
-  const blanks = (new Date(Date.UTC(year, monthNumber - 1, 1)).getUTCDay() + 6) % 7;
-  const daysInMonth = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate();
-  const shiftMonth = (by: number) => {
-    const next = new Date(Date.UTC(year, monthNumber - 1 + by, 1));
-    setMonth(`${next.getUTCFullYear()}-${pad(next.getUTCMonth() + 1)}`);
-  };
-  const arrow = "flex h-9 w-9 items-center justify-center rounded-full text-xl text-[var(--brand)] hover:bg-neutral-100 disabled:text-neutral-300 disabled:hover:bg-transparent";
   const readOnlyInput = "w-full rounded-md border border-neutral-300 bg-neutral-100 px-3 py-2.5 text-base text-neutral-700";
 
   return (
     <div className="flex flex-col gap-6">
-      <div className={`${confirming && slot ? "hidden" : "flex"} flex-col gap-6 md:flex-row md:gap-8`}>
-        <div className="w-full max-w-sm shrink-0">
-          <div className="mb-3 flex items-center justify-between">
-            <p className="text-base font-semibold">
-              {MONTHS[monthNumber - 1]} {year}
-            </p>
-            <div className="flex gap-1">
-              <button type="button" aria-label="Previous month" disabled={month <= firstMonth} onClick={() => shiftMonth(-1)} className={arrow}>
-                ‹
-              </button>
-              <button type="button" aria-label="Next month" disabled={month >= lastMonth} onClick={() => shiftMonth(1)} className={arrow}>
-                ›
-              </button>
-            </div>
-          </div>
-          <div className="grid grid-cols-7 gap-y-1 text-center">
-            {WEEKDAYS.map((name) => (
-              <span key={name} className="pb-1 text-[11px] font-medium tracking-wide text-neutral-500">
-                {name}
-              </span>
-            ))}
-            {Array.from({ length: blanks }, (_, i) => (
-              <span key={`blank-${i}`} />
-            ))}
-            {Array.from({ length: daysInMonth }, (_, i) => {
-              const key = `${month}-${pad(i + 1)}`;
-              const open = byDay.has(key);
-              const chosen = key === day.day;
-              return (
-                <div key={key} className="flex justify-center">
-                  <button
-                    type="button"
-                    disabled={!open}
-                    aria-pressed={chosen}
-                    aria-label={open ? byDay.get(key)!.label : undefined}
-                    onClick={() => {
-                      setSelectedDay(key);
-                      setTime("");
-                      setConfirming(false);
-                    }}
-                    className={`flex h-10 w-10 items-center justify-center rounded-full text-sm ${
-                      chosen
-                        ? "bg-[var(--brand)] font-bold text-white"
-                        : open
-                          ? "bg-[color-mix(in_srgb,var(--brand)_14%,white)] font-bold text-[var(--brand)] hover:bg-[color-mix(in_srgb,var(--brand)_26%,white)]"
-                          : "text-neutral-400"
-                    }`}
-                  >
-                    {i + 1}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-          <p className="mt-4 text-sm text-neutral-600">Times shown are UK time</p>
-        </div>
-
-        <div className="min-w-0 flex-1 md:max-w-xs">
-          <p className="mb-3 text-base font-medium">{day.label}</p>
-          <div className="flex max-h-[22rem] flex-col gap-2 overflow-y-auto pr-1">
-            {day.slots.map((s) =>
-              s.iso === time ? (
-                <div key={s.iso} className="flex gap-2">
-                  <span className="flex flex-1 items-center justify-center rounded-md bg-neutral-600 py-3 text-base font-bold text-white">{s.label}</span>
-                  {!confirming && (
-                    <button
-                      type="button"
-                      onClick={() => setConfirming(true)}
-                      className="flex-1 rounded-md bg-[var(--brand)] py-3 text-base font-bold text-white hover:opacity-90"
-                    >
-                      Next
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <button
-                  key={s.iso}
-                  type="button"
-                  onClick={() => setTime(s.iso)}
-                  className="rounded-md border border-[var(--brand)] bg-white py-3 text-base font-bold text-[var(--brand)] hover:border-2"
-                >
-                  {s.label}
-                </button>
-              ),
-            )}
-          </div>
-        </div>
+      <div className={confirming && slot ? "hidden" : ""}>
+        <SlotPicker
+          days={days}
+          day={day.day}
+          time={time}
+          onDay={(key) => {
+            setSelectedDay(key);
+            setTime("");
+            setConfirming(false);
+          }}
+          onTime={setTime}
+          onNext={() => setConfirming(true)}
+        />
       </div>
 
       {confirming && slot && (

@@ -35,6 +35,6 @@ Planner, Tester and Reviewer to start. Content agents join when Refresh's assets
 
 ## Open
 - [ ] Who checks the legal wording and paperwork
-- [ ] Real figures and support details from John English
+- [ ] Real figures and support details from Paul English
 - [ ] Refresh's content: interviews, VSL, prospectus, emails (most likely to run late)
 - [ ] Official prices confirmed (doc 03)

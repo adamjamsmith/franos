@@ -138,3 +138,7 @@ Three places where the build is simpler than the spec:
 - **The owner moves a session from the person's own page** (the calendar icon opens it).
 
 Not yet checked with a real session: the recording, transcript and sound files arriving against a session (check 6), and deleting a session removing its recording from Zoom (check 9). The franos Zoom app was allowed to delete recordings on 16 Nov, and removing the video from a test recording worked.
+
+**16 Nov 2026, added the same day:** the owner can add a session directly from the Sessions screen, at any time including today (the booking link needs a day of notice). The person agrees to the recording on their own page; the session shows "No permission yet" until they do.
+
+**16 Nov 2026, also added:** a fourth kind, Meeting, for working calls that only need notes; and a choice on each owner-added session between keeping the video and keeping the transcript only (Adam's request). A meeting has no booking link and asks for no advert permission.

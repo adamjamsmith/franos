@@ -1,12 +1,12 @@
 import { and, asc, eq, like, sql } from "drizzle-orm";
 import type { MeetingProvider, SoundFile } from "../calls/provider";
 import { callSettingsFor, type DaySlots, isOpenSlot, openSlots } from "../calls/slots";
-import { ukWhen } from "../calls/time";
+import { toClock, ukMinutes, ukWhen } from "../calls/time";
 import { type Db, type Session, type Tx, withSession } from "../db/context";
 import { jobs, recordingSessions } from "../db/schema";
-import { emailSettingsFor, sign, signatureOk } from "../email/render";
+import { emailSettingsFor, sign, signatureOk, ukDay } from "../email/render";
 import { baseUrl, type Deliver } from "../email/send";
-import { type CallSettings, siteFor } from "../site/config";
+import { type CallSettings, type SessionHours, siteFor } from "../site/config";
 import { siteSession } from "../site/leads";
 import { busyCallTimes, busySessions } from "./busy";
 import { hostSessionEmail, type SessionEmailKind, sessionEmail } from "./emails";
@@ -16,15 +16,19 @@ import { hostSessionEmail, type SessionEmailKind, sessionEmail } from "./emails"
  * testimonial, the franchisor being interviewed, or anything else worth recording for a brand.
  * Unlike a lead call, the whole recording is kept: video, sound, a sound file per person and the transcript.
  */
-export const SESSION_KINDS = ["testimonial", "franchisor", "other"] as const;
+export const SESSION_KINDS = ["testimonial", "franchisor", "other", "meeting"] as const;
+/** The kinds someone can book for themselves from a link. A meeting is only ever set up by the owner. */
+export const BOOKABLE_KINDS = ["testimonial", "franchisor", "other"] as const;
 export type SessionKind = (typeof SESSION_KINDS)[number];
 export const isSessionKind = (value: string): value is SessionKind => (SESSION_KINDS as readonly string[]).includes(value);
-export const KIND_LABELS: Record<SessionKind, string> = { testimonial: "Testimonial", franchisor: "Franchisor interview", other: "Recording" };
+export const isBookableKind = (value: string): value is (typeof BOOKABLE_KINDS)[number] => (BOOKABLE_KINDS as readonly string[]).includes(value);
+export const KIND_LABELS: Record<SessionKind, string> = { testimonial: "Testimonial", franchisor: "Franchisor interview", other: "Recording", meeting: "Meeting" };
 /** How the session is described to the person booking it. */
 export const KIND_SAYS: Record<SessionKind, string> = {
   testimonial: "a recorded conversation about your experience as a franchisee",
   franchisor: "a recorded interview about the franchise",
   other: "a recorded video session",
+  meeting: "a recorded working meeting",
 };
 
 export type RecordingSession = typeof recordingSessions.$inferSelect;
@@ -36,15 +40,49 @@ export type SessionDeps = { deliver: Deliver; provider: MeetingProvider; hosts: 
 const HOUR = 3_600_000;
 export const personName = (s: Pick<RecordingSession, "firstName" | "lastName">) => [s.firstName, s.lastName].filter(Boolean).join(" ");
 
-/** When sessions are on offer. The days off set for the brand's calls count for sessions too. */
-export function sessionSettingsFor(brand: Brand): CallSettings {
-  const calls = callSettingsFor(siteFor(brand));
-  return { ...calls, days: [1, 2, 3, 4, 5], startTime: "09:00", endTime: "17:00", lengthMinutes: 60, gapMinutes: 30, windowDays: 21, noticeHours: 24 };
+type LinkKind = "testimonial" | "franchisor" | "other";
+const WIDE_OPEN: SessionHours = { days: [0, 1, 2, 3, 4, 5, 6], startTime: "08:00", endTime: "20:00", lengthMinutes: 60, gapMinutes: 0, windowDays: 60, noticeHours: 0 };
+/**
+ * The standard hours for each booking link. A testimonial keeps to working hours with a day's notice.
+ * A franchisor interview or a general recording is wide open: any day, early to late, no notice.
+ */
+export const SESSION_HOURS: Record<LinkKind, SessionHours> = {
+  testimonial: { days: [1, 2, 3, 4, 5], startTime: "09:00", endTime: "17:00", lengthMinutes: 60, gapMinutes: 30, windowDays: 21, noticeHours: 24 },
+  franchisor: WIDE_OPEN,
+  other: WIDE_OPEN,
+};
+
+/**
+ * When one booking link offers sessions: the owner's own settings for that link, over its standard hours.
+ * The days off set for the brand's calls count for sessions too. A meeting has no link, so it moves by the general recording's hours.
+ */
+export function sessionSettingsFor(brand: Brand, kind: string = "testimonial"): CallSettings {
+  const site = siteFor(brand);
+  const link: LinkKind = kind === "testimonial" || kind === "franchisor" ? kind : "other";
+  return { ...callSettingsFor(site), ...SESSION_HOURS[link], ...(site.sessions?.[link] ?? {}) };
 }
 
 /** The permission a person ticks before booking. Saved word for word with the session. */
 export function sessionConsentWording(brandName: string, contactEmail: string): string {
   return `I agree to this Zoom session being recorded (video, sound and a written transcript), and to ${brandName} and Franchise Right using the recording, my name and what I say in adverts and other marketing for the franchise, including paid adverts on social media. I can withdraw this at any time by emailing ${contactEmail}; adverts will be taken down, but that cannot undo what has already been seen.`;
+}
+
+/** What is saved in place of the permission when the owner books a session for someone. They tick the box on their own page. */
+export const PERMISSION_PENDING = "Not given yet. Booked by the owner.";
+/** A working meeting is recorded for notes only and never used in marketing, so there is no permission box to tick. */
+export const PERMISSION_NOT_NEEDED = "Not needed. A working meeting, recorded for notes only.";
+export const hasPermission = (s: Pick<RecordingSession, "consentWording">) => s.consentWording !== PERMISSION_PENDING;
+
+/** Reads a date and time typed in as UK time ("2026-11-16T16:00"). */
+export function ukLocal(value: string): Date | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+  if (!m) return null;
+  const guess = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]));
+  // The UK is either on UTC or an hour ahead of it. Keep whichever reads back as the time typed.
+  for (const candidate of [new Date(guess), new Date(guess - HOUR)]) {
+    if (`${ukDay(candidate)}T${toClock(ukMinutes(candidate))}` === value) return candidate;
+  }
+  return null;
 }
 
 // ---------- Links ----------
@@ -65,9 +103,9 @@ async function busyForSessions(tx: Tx, now: Date) {
 }
 
 /** The times on offer for a session. A session being moved does not block its own time. */
-export async function sessionSlots(tx: Tx, brand: Brand, now: Date, movingId?: string): Promise<DaySlots[]> {
+export async function sessionSlots(tx: Tx, brand: Brand, now: Date, kind: string, movingId?: string): Promise<DaySlots[]> {
   const busy = (await busyForSessions(tx, now)).filter((b) => b.id !== movingId);
-  return openSlots(sessionSettingsFor(brand), now, busy);
+  return openSlots(sessionSettingsFor(brand, kind), now, busy);
 }
 
 // ---------- Timed work ----------
@@ -122,6 +160,8 @@ async function tell(brand: Brand, deps: SessionDeps, session: RecordingSession, 
     when: ukWhen(session.startsAt),
     minutes: Math.round((session.endsAt.getTime() - session.startsAt.getTime()) / 60_000),
     joinUrl: session.meetingUrl,
+    agreed: hasPermission(session),
+    notesOnly: session.consentWording === PERMISSION_NOT_NEEDED,
   };
   const from = { fromName: settings.fromName, fromAddress: settings.fromAddress };
   await deps.deliver({ ...sessionEmail(kind, input), ...from, to: session.email });
@@ -144,7 +184,9 @@ export type SessionInput = {
   firstName: string;
   lastName: string;
   email: string;
-  phone: string;
+  phone?: string;
+  /** The franchise location they run. A testimonial is not booked without it. */
+  location?: string;
   /** Whether the permission box was ticked. Nothing is booked without it. */
   consent: boolean;
   /** The permission wording as it was shown on the page. */
@@ -164,11 +206,13 @@ export async function bookSession(db: Db, brand: Brand, deps: SessionDeps, input
   const now = input.now ?? new Date();
   const firstName = input.firstName.trim();
   const email = input.email.trim().toLowerCase();
+  const location = (input.location ?? "").trim();
   if (!firstName || !emailLooksRight(email)) return { ok: false, reason: "details" };
+  if (input.kind === "testimonial" && !location) return { ok: false, reason: "details" };
   if (!input.consent || !input.consentWording.trim()) return { ok: false, reason: "consent" };
   try {
     const session = await withSession(db, siteSession(brand.id), async (tx) => {
-      const settings = sessionSettingsFor(brand);
+      const settings = sessionSettingsFor(brand, input.kind);
       if (!isOpenSlot(settings, now, await busyForSessions(tx, now), input.startsAt)) return "time" as const;
       const endsAt = new Date(input.startsAt.getTime() + settings.lengthMinutes * 60_000);
       const [created] = await tx
@@ -179,7 +223,8 @@ export async function bookSession(db: Db, brand: Brand, deps: SessionDeps, input
           firstName,
           lastName: input.lastName.trim(),
           email,
-          phone: input.phone.trim() || null,
+          phone: (input.phone ?? "").trim() || null,
+          location: location || null,
           startsAt: input.startsAt,
           endsAt,
           consentWording: input.consentWording.trim(),
@@ -208,6 +253,74 @@ export async function bookSession(db: Db, brand: Brand, deps: SessionDeps, input
   }
 }
 
+/**
+ * The owner books a session for someone, at any time they like: today, out of hours, at short notice.
+ * Only a clash with another session or a lead call is refused. The person is emailed the invitation and
+ * ticks the permission box on their own page.
+ */
+export async function addSession(
+  db: Db,
+  session: Session,
+  brand: Brand,
+  deps: SessionDeps,
+  input: { kind: SessionKind; firstName: string; lastName: string; email: string; startsAt: Date; minutes?: number; /** Left out, a meeting keeps the transcript only and everything else keeps its video. */ keepVideo?: boolean; now?: Date },
+): Promise<SessionResult> {
+  const now = input.now ?? new Date();
+  const firstName = input.firstName.trim();
+  const email = input.email.trim().toLowerCase();
+  if (!firstName || !emailLooksRight(email)) return { ok: false, reason: "details" };
+  const minutes = Math.min(240, Math.max(15, input.minutes ?? sessionSettingsFor(brand, input.kind).lengthMinutes));
+  const endsAt = new Date(input.startsAt.getTime() + minutes * 60_000);
+  if (endsAt <= now) return { ok: false, reason: "time" };
+  try {
+    const saved = await withSession(db, session, async (tx) => {
+      const busy = await busyForSessions(tx, now);
+      if (busy.some((b) => input.startsAt < b.endsAt && endsAt > b.startsAt)) return "taken" as const;
+      const [created] = await tx
+        .insert(recordingSessions)
+        .values({
+          clientId: brand.id,
+          kind: input.kind,
+          firstName,
+          lastName: input.lastName.trim(),
+          email,
+          startsAt: input.startsAt,
+          endsAt,
+          consentWording: input.kind === "meeting" ? PERMISSION_NOT_NEEDED : PERMISSION_PENDING,
+          consentAt: now,
+          keepVideo: input.keepVideo ?? input.kind !== "meeting",
+        })
+        .returning();
+      const meeting = await deps.provider.create({
+        topic: `${brand.name} ${KIND_LABELS[input.kind].toLowerCase()} with ${personName(created)}`,
+        startsAt: input.startsAt,
+        minutes,
+      });
+      const [row] = await tx.update(recordingSessions).set({ meetingId: meeting.id, meetingUrl: meeting.joinUrl }).where(eq(recordingSessions.id, created.id)).returning();
+      await scheduleJobs(tx, row, now);
+      return row;
+    });
+    if (saved === "taken") return { ok: false, reason: "taken" };
+    await tell(brand, deps, saved, "confirmation");
+    return { ok: true, sessionId: saved.id };
+  } catch (error) {
+    if (isSlotClash(error)) return { ok: false, reason: "taken" };
+    throw error;
+  }
+}
+
+/** The person ticks the permission box on their own page, for a session the owner booked for them. */
+export async function givePermission(db: Db, brand: Brand, input: { sessionId: string; wording: string; now?: Date }): Promise<boolean> {
+  const done = await withSession(db, siteSession(brand.id), (tx) =>
+    tx
+      .update(recordingSessions)
+      .set({ consentWording: input.wording.trim(), consentAt: input.now ?? new Date() })
+      .where(and(eq(recordingSessions.id, input.sessionId), eq(recordingSessions.consentWording, PERMISSION_PENDING)))
+      .returning({ id: recordingSessions.id }),
+  );
+  return done.length > 0;
+}
+
 /** Moves a booked session to another time on offer. */
 export async function moveSession(db: Db, session: Session, brand: Brand, deps: SessionDeps, input: { sessionId: string; startsAt: Date; now?: Date }): Promise<SessionResult> {
   const now = input.now ?? new Date();
@@ -217,7 +330,7 @@ export async function moveSession(db: Db, session: Session, brand: Brand, deps: 
       if (!current || current.status !== "booked" || current.startsAt <= now) return "time" as const;
       if (current.startsAt.getTime() === input.startsAt.getTime()) return { saved: current, moved: false };
       const busy = (await busyForSessions(tx, now)).filter((b) => b.id !== current.id);
-      if (!isOpenSlot(sessionSettingsFor(brand), now, busy, input.startsAt)) return "time" as const;
+      if (!isOpenSlot(sessionSettingsFor(brand, current.kind), now, busy, input.startsAt)) return "time" as const;
       const endsAt = new Date(input.startsAt.getTime() + (current.endsAt.getTime() - current.startsAt.getTime()));
       const [saved] = await tx.update(recordingSessions).set({ startsAt: input.startsAt, endsAt }).where(eq(recordingSessions.id, current.id)).returning();
       await cancelJobs(tx, current.id);
@@ -304,6 +417,14 @@ export async function collectSession(db: Db, brand: Brand, deps: SessionDeps, se
   const found = report ? { durationMinutes: report.minutes, recordingUrl: report.recordingUrl, transcript: report.transcript, soundFiles: (report.soundFiles ?? []) as SoundFile[] } : null;
   if (found && found.recordingUrl && found.transcript) {
     await save({ status: "happened", ...found });
+    // Transcript only: now that the transcript is saved, the video goes. A failure leaves the video where it is.
+    if (!session.keepVideo) {
+      try {
+        await deps.provider.dropVideo?.(session.meetingId);
+      } catch (error) {
+        console.error("Could not remove a session video from the video-call service", error);
+      }
+    }
     return true;
   }
   if (deps.provider.waitsForCalls && now.getTime() < session.endsAt.getTime() + 3 * HOUR) {

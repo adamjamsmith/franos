@@ -1,6 +1,6 @@
 # Refresh Renovation — Avatar card v0
 
-**Status:** v0, draft. Built from one interview. Confirm with more franchisee interviews (and John English) before it becomes v1. Needs Adam's approval.
+**Status:** v0, draft. Built from one interview. Confirm with more franchisee interviews (and Paul English) before it becomes v1. Needs Adam's approval.
 **Avatar type:** business builder / management franchise (~£35k). Tight avatar.
 **Target:** ~£4,000 per signed franchisee (one a month on ~£4k/month).
 **Source:** Adam's interview with Ali Irteza, 4 Nov 2026 (Downloads\2026-11-04_1100_Adam_45_Mins_transcript.txt). The transcript is auto-generated, so figures are approximate.
@@ -45,7 +45,7 @@ Covid, redundancy, leaving a 9–5, a bad renovation experience of their own.
 - What do you do now? (role and level)
 
 ## Objections to prepare for (not for marketing)
-- **Support:** Ali felt guidance on local marketing channels and pricing was thin, and hand-holding was reduced after he joined. John and Mike need strong answers. Useful feedback for John.
+- **Support:** Ali felt guidance on local marketing channels and pricing was thin, and hand-holding was reduced after he joined. Paul and Mike need strong answers. Useful feedback for Paul.
 - **Time to first project:** Ali says it should be within 3 months with the right local guidance.
 - **Delivery quality / sub-trades** without a construction background.
 
@@ -59,9 +59,9 @@ VSL → prospectus → call → next steps → questions (Adam's known path), pl
 
 ## To do for v1
 - [ ] Interview 3–5 more Refresh franchisees (top performers first; interview all, tag clips)
-- [ ] Ask John English who his best franchisees are and why
+- [ ] Ask Paul English who his best franchisees are and why
 - [ ] Narrow to 3–5 qualifiers
 - [ ] Adam approves
 
 ## Core message (Adam, 14 Nov 2026)
-Ali is very happy with the franchise. His main point: if you really want to get into renovation, this is a way in that you could not have managed alone. Lead with that. Earnings figures still need checking with John English before they are used.
+Ali is very happy with the franchise. His main point: if you really want to get into renovation, this is a way in that you could not have managed alone. Lead with that. Earnings figures still need checking with Paul English before they are used.

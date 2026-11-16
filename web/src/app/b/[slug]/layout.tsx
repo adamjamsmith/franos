@@ -19,6 +19,8 @@ export default async function BrandLayout({ children, params }: LayoutProps<"/b/
       { href: `${base}/board`, label: "Board", icon: "board" },
       { href: base, label: "Leads", icon: "leads", also: [`${base}/leads`] },
       { href: `${base}/calls`, label: "Calls", icon: "calls" },
+      // Recorded sessions with people who are not leads. The owner's alone.
+      ...(role === "owner" ? [{ href: `${base}/sessions`, label: "Sessions", icon: "sessions" } satisfies NavItem] : []),
     ],
     [{ href: `${base}/numbers`, label: "Numbers", icon: "numbers" }],
     // Setting things up is the owner's job, so only the owner has it in the menu.
