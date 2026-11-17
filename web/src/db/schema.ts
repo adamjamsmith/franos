@@ -114,6 +114,22 @@ export const twoFactors = pgTable("two_factors", {
 });
 
 /** Which brands a non-owner user can work in, and as what. */
+/**
+ * A person's own calendar, linked by its private address. `feed` is that address, sealed. `busy` is the busy
+ * times last read from it, as { s, e }[]: times only, never what an appointment is. The app's everyday role
+ * cannot read this table at all; busy times reach the booking pages through calendar_busy_times().
+ */
+export const userCalendars = pgTable("user_calendars", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  feed: text("feed").notNull(),
+  busy: jsonb("busy").notNull().default([]),
+  checkedAt: timestamp("checked_at", { withTimezone: true }).notNull(),
+  lastError: text("last_error"),
+  createdAt: createdAt(),
+});
+
 export const memberships = pgTable(
   "memberships",
   {

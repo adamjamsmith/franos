@@ -8,7 +8,7 @@ import { emailSettingsFor, sign, signatureOk, ukDay } from "../email/render";
 import { baseUrl, type Deliver } from "../email/send";
 import { type CallSettings, type SessionHours, siteFor } from "../site/config";
 import { siteSession } from "../site/leads";
-import { busyCallTimes, busySessions } from "./busy";
+import { busyCallTimes, busySessions, busyCalendarTimes } from "./busy";
 import { hostSessionEmail, type SessionEmailKind, sessionEmail } from "./emails";
 
 /**
@@ -102,9 +102,14 @@ async function busyForSessions(tx: Tx, now: Date) {
   return [...(await busySessions(tx, now)), ...(await busyCallTimes(tx, now))];
 }
 
+/** What blocks a time on a booking link: other bookings, and anything in the owner's own linked calendar. */
+async function busyForLinks(tx: Tx, now: Date) {
+  return [...(await busyForSessions(tx, now)), ...(await busyCalendarTimes(tx, "owners"))];
+}
+
 /** The times on offer for a session. A session being moved does not block its own time. */
 export async function sessionSlots(tx: Tx, brand: Brand, now: Date, kind: string, movingId?: string): Promise<DaySlots[]> {
-  const busy = (await busyForSessions(tx, now)).filter((b) => b.id !== movingId);
+  const busy = (await busyForLinks(tx, now)).filter((b) => b.id !== movingId);
   return openSlots(sessionSettingsFor(brand, kind), now, busy);
 }
 
@@ -143,6 +148,11 @@ const cancelJobs = (tx: Tx, sessionId: string) =>
     .where(and(eq(jobs.status, "pending"), like(jobs.dedupeKey, `session-${sessionId}-%`)));
 
 // ---------- Telling people ----------
+
+/** Tells people about a booking, a move or a cancellation. The booking is already saved, so an email that cannot be sent must not break the page. */
+async function tellSafely(...args: Parameters<typeof tell>) {
+  await tell(...args).catch((error) => console.error("A session email could not be sent:", error instanceof Error ? error.message : error));
+}
 
 async function tell(brand: Brand, deps: SessionDeps, session: RecordingSession, kind: SessionEmailKind, options: { host?: boolean } = {}) {
   const site = siteFor(brand);
@@ -213,7 +223,7 @@ export async function bookSession(db: Db, brand: Brand, deps: SessionDeps, input
   try {
     const session = await withSession(db, siteSession(brand.id), async (tx) => {
       const settings = sessionSettingsFor(brand, input.kind);
-      if (!isOpenSlot(settings, now, await busyForSessions(tx, now), input.startsAt)) return "time" as const;
+      if (!isOpenSlot(settings, now, await busyForLinks(tx, now), input.startsAt)) return "time" as const;
       const endsAt = new Date(input.startsAt.getTime() + settings.lengthMinutes * 60_000);
       const [created] = await tx
         .insert(recordingSessions)
@@ -245,7 +255,7 @@ export async function bookSession(db: Db, brand: Brand, deps: SessionDeps, input
       return saved;
     });
     if (session === "time") return { ok: false, reason: "time" };
-    await tell(brand, deps, session, "confirmation", { host: true });
+    await tellSafely(brand, deps, session, "confirmation", { host: true });
     return { ok: true, sessionId: session.id };
   } catch (error) {
     if (isSlotClash(error)) return { ok: false, reason: "taken" };
@@ -301,7 +311,7 @@ export async function addSession(
       return row;
     });
     if (saved === "taken") return { ok: false, reason: "taken" };
-    await tell(brand, deps, saved, "confirmation");
+    await tellSafely(brand, deps, saved, "confirmation");
     return { ok: true, sessionId: saved.id };
   } catch (error) {
     if (isSlotClash(error)) return { ok: false, reason: "taken" };
@@ -329,7 +339,7 @@ export async function moveSession(db: Db, session: Session, brand: Brand, deps: 
       const [current] = await tx.select().from(recordingSessions).where(eq(recordingSessions.id, input.sessionId));
       if (!current || current.status !== "booked" || current.startsAt <= now) return "time" as const;
       if (current.startsAt.getTime() === input.startsAt.getTime()) return { saved: current, moved: false };
-      const busy = (await busyForSessions(tx, now)).filter((b) => b.id !== current.id);
+      const busy = (await busyForLinks(tx, now)).filter((b) => b.id !== current.id);
       if (!isOpenSlot(sessionSettingsFor(brand, current.kind), now, busy, input.startsAt)) return "time" as const;
       const endsAt = new Date(input.startsAt.getTime() + (current.endsAt.getTime() - current.startsAt.getTime()));
       const [saved] = await tx.update(recordingSessions).set({ startsAt: input.startsAt, endsAt }).where(eq(recordingSessions.id, current.id)).returning();
@@ -339,7 +349,7 @@ export async function moveSession(db: Db, session: Session, brand: Brand, deps: 
       return { saved, moved: true };
     });
     if (result === "time") return { ok: false, reason: "time" };
-    if (result.moved) await tell(brand, deps, result.saved, "changed", { host: true });
+    if (result.moved) await tellSafely(brand, deps, result.saved, "changed", { host: true });
     return { ok: true, sessionId: result.saved.id };
   } catch (error) {
     if (isSlotClash(error)) return { ok: false, reason: "taken" };
@@ -360,7 +370,7 @@ export async function cancelSession(db: Db, session: Session, brand: Brand, deps
     return done;
   });
   if (!cancelled) return false;
-  await tell(brand, deps, cancelled, "cancelled", { host: true });
+  await tellSafely(brand, deps, cancelled, "cancelled", { host: true });
   return true;
 }
 

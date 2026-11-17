@@ -3,13 +3,16 @@ import { addPerson, removePerson } from "@/app/actions";
 import { buttonClass, Field, inputClass, Notice, quietButtonClass } from "@/components/ui";
 import { withSession } from "@/db/context";
 import { memberships, users } from "@/db/schema";
+import { calendarStates } from "@/calendars/calendars";
+import { adminDb } from "@/db";
 import { requireBrand } from "@/lib/session";
+import { MyCalendar } from "./my-calendar";
 
 const roleNames: Record<string, string> = { client: "Client", consultant: "Consultant" };
 
 export default async function PeoplePage({ params, searchParams }: PageProps<"/b/[slug]/settings/people">) {
   const { slug } = await params;
-  const { error, added } = await searchParams;
+  const { error, added, calendar } = await searchParams;
   const { session, db, role, client } = await requireBrand(slug);
   const canManage = role !== "consultant";
 
@@ -20,6 +23,9 @@ export default async function PeoplePage({ params, searchParams }: PageProps<"/b
       .innerJoin(users, eq(users.id, memberships.userId))
       .where(eq(memberships.clientId, client.id)),
   );
+
+  // Whether each person has linked a calendar. Only a yes or no leaves the calendar store.
+  const calendars = await calendarStates(await adminDb(), [session.userId, ...people.map((p) => p.userId)]);
 
   return (
     <section className="flex flex-col gap-6">
@@ -43,6 +49,7 @@ export default async function PeoplePage({ params, searchParams }: PageProps<"/b
                 <p className="font-medium">{person.name}</p>
                 <p className="text-sm text-neutral-500">
                   {person.email} · {roleNames[person.role] ?? person.role}
+                  {person.role === "consultant" && (calendars.get(person.userId)?.linked ? " · calendar linked" : " · calendar not linked")}
                 </p>
               </div>
               {canManage && (
@@ -56,6 +63,8 @@ export default async function PeoplePage({ params, searchParams }: PageProps<"/b
           ))}
         </ul>
       )}
+
+      <MyCalendar slug={slug} state={calendars.get(session.userId) ?? { linked: false }} result={typeof calendar === "string" ? calendar : undefined} />
 
       {canManage && (
         <div className="rounded-md border border-neutral-300 p-4 dark:border-neutral-700">

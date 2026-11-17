@@ -22,3 +22,13 @@ export async function busySessions(tx: Tx, now: Date) {
 export async function busyCallTimes(tx: Tx, now: Date) {
   return times(await tx.execute(sql`select id, starts_at, ends_at from call_busy_times(${since(now)}::timestamptz)`));
 }
+
+/**
+ * Busy times from people's own linked calendars: the owners' for a recording session, this brand's consultants'
+ * for a lead call (the owners' when the brand has no consultant). Times only. They have no id, so nothing can un-block them.
+ */
+export async function busyCalendarTimes(tx: Tx, hosts: "owners" | "consultants") {
+  const result = await tx.execute(sql`select starts_at, ends_at from calendar_busy_times(${hosts})`);
+  const rows = (result as { rows?: Record<string, unknown>[] }).rows ?? [];
+  return rows.map((row) => ({ id: "calendar", startsAt: new Date(row.starts_at as string), endsAt: new Date(row.ends_at as string) }));
+}

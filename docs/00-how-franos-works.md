@@ -196,5 +196,23 @@ For filming people who are not leads: a franchisee's testimonial, a franchisor i
 - **On the server, the booking pages are the one part open to the outside** (decision 116). The privacy notice they link to is still shut and still a placeholder, and franOS's own emails only reach verified addresses until Amazon lifts the limit.
 - A session is never a lead: no Fit score, no emails sequence, nothing sent to Meta.
 
+## Linked calendars
+
+- **Each person can link their own calendar,** in Settings > People, under "Your calendar". They paste the calendar's private read-only address once (Google calls it the "Secret address in iCal format"; Outlook calls it the published ICS link).
+- **franOS reads it about every 10 minutes** and keeps the busy times only: never what an appointment is or who it is with. Repeating appointments are laid out one by one. Anything marked "free" or cancelled is ignored.
+- **Whose calendar blocks what.** A recording-session booking link never offers a time the owner is busy. A brand's lead-call calendar never offers a time its consultant is busy; a brand with no consultant uses the owner's calendar.
+- **A session the owner books by hand ignores the calendar,** as it ignores the hours.
+- **The address works like a password.** It is stored sealed, never shown again, and nobody can see anyone else's. Others see only "calendar linked" or "not linked".
+- **If a reading fails,** the last known busy times stay in force and the person sees why on the People tab.
+- **franOS does not write to the calendar.** A booking gets there through the invitation in the confirmation email. A cancelled booking stays in the person's calendar until they delete it, and keeps blocking that time until then.
+
+## How long things are kept
+
+- **A lead-call recording and transcript:** cleared 12 months after the call, from franOS and from Zoom. The call itself, and how it went, stay on the lead.
+- **A lead and everything about them:** deleted 2 years after the last contact. Last contact is the latest of: when they signed up, anything on their journey, any email sent to them, any call, and when their outcome was set. A lead with a call still to come is never deleted.
+- **A signed lead is never deleted on a timer.** They are a franchisee now.
+- **Recording sessions** (testimonials, interviews) are not on a timer. They are reviewed by hand every 12 months.
+- **It runs by itself** a few times a day. Each removal is written to the audit log, with nothing about who the person was.
+
 ## How it is checked
 285 automatic tests (`npm test` in the `web` folder) cover the rules above, including that one brand cannot see another's data. Each step was also walked through by hand in a browser on a throwaway database.

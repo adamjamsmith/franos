@@ -5,7 +5,7 @@ import { emailSettingsFor } from "../email/render";
 import { baseUrl, type Deliver } from "../email/send";
 import { siteFor } from "../site/config";
 import { siteSession } from "../site/leads";
-import { busySessions } from "../sessions/busy";
+import { busyCalendarTimes, busySessions } from "../sessions/busy";
 import { type CallEmailKind, leadCallEmail, outcomeReminderEmail, type ReminderKind, REMINDERS, staffCallEmail, type StaffEmailKind } from "./emails";
 import type { CallReport, MeetingProvider } from "./provider";
 import { callSettingsFor, type DaySlots, isOpenSlot, openSlots } from "./slots";
@@ -31,7 +31,8 @@ async function busyCalls(tx: Tx, now: Date) {
     .from(calls)
     .where(and(ne(calls.status, "cancelled"), gte(calls.endsAt, new Date(now.getTime() - 24 * HOUR))));
   // A recording session in any brand blocks the time as well: the same person hosts it.
-  return [...booked, ...(await busySessions(tx, now))];
+  // So does anything in the own calendar of whoever takes this brand's calls, when they have linked one.
+  return [...booked, ...(await busySessions(tx, now)), ...(await busyCalendarTimes(tx, "consultants"))];
 }
 
 /** The lead's booked call that has not finished yet, if they have one. */

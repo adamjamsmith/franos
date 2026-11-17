@@ -1,3 +1,5 @@
+import { applyRetentionWhenDue } from "../retention/retention";
+import { refreshCalendars } from "../calendars/calendars";
 import { and, eq } from "drizzle-orm";
 import { adminDb, appDb } from "../db";
 import { clients, memberships, users } from "../db/schema";
@@ -68,5 +70,9 @@ export async function runTimedWork(now: Date = new Date()) {
       () => now,
     ),
   };
+  // People's own calendars are read again every few minutes. A calendar that fails never stops the timed work.
+  await refreshCalendars(await adminDb(), now).catch((error) => console.error("Reading calendars failed", error));
+  // Old recordings and leads past their keeping time are removed, a few times a day.
+  await applyRetentionWhenDue(async () => adminDb(), meetingProvider(), now).catch((error) => console.error("Timed deletion failed", error));
   return runDueJobs(db, handlers, now);
 }

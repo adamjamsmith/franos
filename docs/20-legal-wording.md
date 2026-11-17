@@ -22,7 +22,7 @@
 | 8 | The WhatsApp tick | Removed from the form |
 
 **Not built yet, and the notice depends on it:**
-- franOS does not delete anything on a timer. The keeping periods have to be built (or done by hand) before the notice promises them. Recordings also sit in Zoom's storage, so deleting has to remove them there too.
+- **Built 16 Nov 2026 (decision 119):** franOS now deletes on a timer, to these periods, and removes the recording from Zoom as well. A signed lead is not deleted on a timer; the notice should say that a franchisee's record is kept under the franchise agreement.
 - Recordings and transcripts need the paid Zoom plan, and the AI analysis of calls is not built.
 
 ## 2. The consent tick (required, on the form)

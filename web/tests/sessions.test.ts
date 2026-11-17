@@ -200,6 +200,12 @@ describe("booking a session", () => {
     expect(interview.ok && (await one(interview.sessionId)).location).toBeNull();
   });
 
+  it("keeps the booking when the confirmation email cannot be sent", async () => {
+    deps = { ...deps, deliver: () => Promise.reject(new Error("Email address is not verified")) };
+    expect((await book(wed9)).ok).toBe(true);
+    expect(await admin.select().from(recordingSessions)).toHaveLength(1);
+  });
+
   it("refuses a time that is not on offer", async () => {
     expect(await book(at("2026-03-04T09:15:00Z"))).toEqual({ ok: false, reason: "time" });
     expect(await book(at("2026-03-02T15:00:00Z"))).toEqual({ ok: false, reason: "time" }); // under a day's notice

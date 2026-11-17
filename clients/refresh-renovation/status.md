@@ -19,3 +19,7 @@
 **15 Nov 2026, accounts:** AWS, GitHub and Neon are open. Refresh Renovation will use `refresh.franchiseright.co.uk` for its pages and email until it signs and has its own domain. The sending address exists in AWS; the three lines are in Namecheap and Amazon has verified it. The request to lift test mode went to Amazon on 15 Nov and is under review. After approval: build bounce and complaint handling, then start the 2 to 3 week warm-up.
 
 **16 Nov 2026:** Zoom is on Pro and recording is tested. Lead calls will keep the transcript only. Testimonials and franchisor interviews can now be booked from a link in franOS (Calls > Sessions), recorded in full on Zoom and saved against the brand, so Refresh Renovation's testimonials no longer need Calendly. The team now signs in at `crm.franchiseright.co.uk`. Legal wording is drafted (`docs/20-legal-wording.md`); it needs the company details from Paul before it is loaded.
+
+**16 Nov 2026, agreement:** Adam has signed the agreement and sent it to Paul with the £3,000 set-up fee request. The agreement says Paul pays the fee. Still to come from Paul: his signature and the payment. The onboarding call is booked once he has paid.
+
+**17 Nov 2026:** A session booked by hand crashed the page when Amazon refused the confirmation email (test mode). Fixed and on the server: a failed email no longer breaks a booking, move or cancellation. Sender address and Mike's access are open; see the later list.

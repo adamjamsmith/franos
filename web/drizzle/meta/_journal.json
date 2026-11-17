@@ -169,6 +169,20 @@
       "when": 1794847976310,
       "tag": "0023_session_location",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794850071919,
+      "tag": "0024_user_calendars",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794850077544,
+      "tag": "0025_calendar_busy",
+      "breakpoints": true
     }
   ]
 }
