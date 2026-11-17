@@ -78,7 +78,7 @@ export function SessionForm({ slug, kind, code, days, brandName, logoUrl, title,
   const onDetails = step === "details" && slot;
 
   return (
-    <div className="mx-auto flex max-w-5xl flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm md:flex-row">
+    <div data-plain className="mx-auto flex max-w-5xl flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-sm md:flex-row">
       <aside className="border-b border-neutral-200 p-6 md:w-72 md:shrink-0 md:border-b-0 md:border-r">
         {logoUrl ? (
           // eslint-disable-next-line @next/next/no-img-element

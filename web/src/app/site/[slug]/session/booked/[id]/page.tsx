@@ -56,7 +56,7 @@ export default async function BookedSessionPage({ params, searchParams }: PagePr
   );
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-5 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
+    <div data-plain className="mx-auto flex max-w-3xl flex-col gap-5 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm sm:p-6">
       {done && <p className="rounded-md border border-green-300 bg-green-50 px-3 py-2 text-sm text-green-900">{done}</p>}
       {problem && <p className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900">{problem}</p>}
       <div>
@@ -109,6 +109,10 @@ export default async function BookedSessionPage({ params, searchParams }: PagePr
           </form>
         </>
       )}
+      {/* This page has no footer, so the privacy notice is linked here. */}
+      <a href={`/site/${slug}/privacy`} target="_blank" className="self-start text-xs text-neutral-500 underline">
+        Privacy notice
+      </a>
     </div>
   );
 }

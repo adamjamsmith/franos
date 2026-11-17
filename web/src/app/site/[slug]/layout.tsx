@@ -26,11 +26,12 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/sit
   } as CSSProperties;
 
   return (
-    <div className="flex min-h-full flex-1 flex-col bg-[var(--brand-light)] text-neutral-900" style={colours}>
+    // A page marked data-plain (the recording-session booking pages) gets a white background and no footer.
+    <div className="group/site flex min-h-full flex-1 flex-col bg-[var(--brand-light)] text-neutral-900 has-[[data-plain]]:bg-white" style={colours}>
       <StaffBar slug={slug} />
       <MetaPixel slug={slug} brand={brand} />
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-10">{children}</main>
-      <footer className="bg-[var(--brand-soft)] text-sm text-neutral-700">
+      <footer className="bg-[var(--brand-soft)] text-sm text-neutral-700 group-has-[[data-plain]]/site:hidden">
         <div className="mx-auto flex w-full max-w-3xl flex-col gap-3 px-4 py-8">
           <Link href={`/site/${slug}`} className="self-start font-semibold text-neutral-900">
             {site.logoUrl ? (
