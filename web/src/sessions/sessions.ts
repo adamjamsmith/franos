@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { and, asc, eq, like, sql } from "drizzle-orm";
 import type { MeetingProvider, SoundFile } from "../calls/provider";
 import { callSettingsFor, type DaySlots, isOpenSlot, openSlots } from "../calls/slots";
@@ -73,6 +74,31 @@ export const PERMISSION_PENDING = "Not given yet. Booked by the owner.";
 export const PERMISSION_NOT_NEEDED = "Not needed. A working meeting, recorded for notes only.";
 export const hasPermission = (s: Pick<RecordingSession, "consentWording">) => s.consentWording !== PERMISSION_PENDING;
 
+// ---------- Guests ----------
+
+/**
+ * Someone else invited to a session. They get the same emails and the Zoom link, and tick the permission box
+ * for themselves on their own page: nobody can agree to being recorded on another person's behalf.
+ */
+export type Guest = { id: string; email: string; consentWording?: string; consentAt?: string };
+/** Kept small: a booking link lets whoever holds it have the brand email these addresses. */
+export const MAX_GUESTS = 5;
+export const guestsOf = (s: Pick<RecordingSession, "guests">) => (s.guests ?? []) as Guest[];
+/** Whether a guest's permission is held. A working meeting asks for none. */
+export const guestAgreed = (s: Pick<RecordingSession, "consentWording">, guest: Guest) => s.consentWording === PERMISSION_NOT_NEEDED || Boolean(guest.consentWording);
+
+const emailLooksRight = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+/**
+ * Reads the guests box: email addresses separated by commas, spaces or new lines. The person booking is left out,
+ * and so is an address typed twice. Null when something typed is not an email address, or there are too many.
+ */
+export function readGuests(typed: string, bookerEmail: string): Guest[] | null {
+  const emails = [...new Set(typed.toLowerCase().split(/[\s,;]+/).filter(Boolean))].filter((email) => email !== bookerEmail);
+  if (emails.length > MAX_GUESTS || !emails.every(emailLooksRight)) return null;
+  return emails.map((email) => ({ id: randomUUID(), email }));
+}
+
 /** Reads a date and time typed in as UK time ("2026-11-16T16:00"). */
 export function ukLocal(value: string): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
@@ -94,6 +120,9 @@ export const bookingPath = (brand: Pick<Brand, "id" | "slug">, kind: SessionKind
 /** The page for one booked session: its details, and where the person moves or cancels it. Signed, so it needs no login. */
 export const sessionPath = (slug: string, sessionId: string) => `/site/${slug}/session/booked/${sessionId}?s=${sign(`session|${sessionId}`)}`;
 export const sessionLinkOk = (sessionId: string, signature: string) => signatureOk(`session|${sessionId}`, signature);
+/** A guest's own page for the session: the details and their permission box. It cannot move or cancel anything. */
+export const guestPath = (slug: string, sessionId: string, guestId: string) => `/site/${slug}/session/booked/${sessionId}?g=${guestId}&gs=${sign(`session-guest|${sessionId}|${guestId}`)}`;
+export const guestLinkOk = (sessionId: string, guestId: string, signature: string) => signatureOk(`session-guest|${sessionId}|${guestId}`, signature);
 
 // ---------- Times ----------
 
@@ -175,6 +204,15 @@ async function tell(brand: Brand, deps: SessionDeps, session: RecordingSession, 
   };
   const from = { fromName: settings.fromName, fromAddress: settings.fromAddress };
   await deps.deliver({ ...sessionEmail(kind, input), ...from, to: session.email });
+  // Each guest gets the same email, with a link to their own page. One that cannot be sent holds nothing else up.
+  for (const guest of guestsOf(session)) {
+    const mail = sessionEmail(kind, { ...input, firstName: "", agreed: guestAgreed(session, guest), guestId: guest.id });
+    try {
+      await deps.deliver({ ...mail, ...from, to: guest.email });
+    } catch (error) {
+      console.error("A guest's session email could not be sent:", error instanceof Error ? error.message : error);
+    }
+  }
   if (options.host && (kind === "confirmation" || kind === "changed" || kind === "cancelled")) {
     const mail = hostSessionEmail(kind, input);
     for (const host of deps.hosts) await deps.deliver({ ...mail, ...from, to: host.email });
@@ -201,15 +239,15 @@ export type SessionInput = {
   consent: boolean;
   /** The permission wording as it was shown on the page. */
   consentWording: string;
+  /** The guests box as typed: email addresses of other people to invite. */
+  guests?: string;
   startsAt: Date;
   now?: Date;
 };
 export type SessionResult =
   | { ok: true; sessionId: string }
-  /** details: a name or email is missing or wrong. consent: the box was not ticked. time: not on offer. taken: someone just took it. */
-  | { ok: false; reason: "details" | "consent" | "time" | "taken" };
-
-const emailLooksRight = (email: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  /** details: a name or email is missing or wrong. guests: a guest's email is wrong, or there are too many. consent: the box was not ticked. time: not on offer. taken: someone just took it. */
+  | { ok: false; reason: "details" | "guests" | "consent" | "time" | "taken" };
 
 /** Books a recording session from a booking link. Creates the meeting, set to record, and tells the person and the host. */
 export async function bookSession(db: Db, brand: Brand, deps: SessionDeps, input: SessionInput): Promise<SessionResult> {
@@ -219,6 +257,8 @@ export async function bookSession(db: Db, brand: Brand, deps: SessionDeps, input
   const location = (input.location ?? "").trim();
   if (!firstName || !emailLooksRight(email)) return { ok: false, reason: "details" };
   if (input.kind === "testimonial" && !location) return { ok: false, reason: "details" };
+  const guests = readGuests(input.guests ?? "", email);
+  if (!guests) return { ok: false, reason: "guests" };
   if (!input.consent || !input.consentWording.trim()) return { ok: false, reason: "consent" };
   try {
     const session = await withSession(db, siteSession(brand.id), async (tx) => {
@@ -239,6 +279,7 @@ export async function bookSession(db: Db, brand: Brand, deps: SessionDeps, input
           endsAt,
           consentWording: input.consentWording.trim(),
           consentAt: now,
+          guests,
         })
         .returning();
       const meeting = await deps.provider.create({
@@ -273,12 +314,14 @@ export async function addSession(
   session: Session,
   brand: Brand,
   deps: SessionDeps,
-  input: { kind: SessionKind; firstName: string; lastName: string; email: string; startsAt: Date; minutes?: number; /** Left out, a meeting keeps the transcript only and everything else keeps its video. */ keepVideo?: boolean; now?: Date },
+  input: { kind: SessionKind; firstName: string; lastName: string; email: string; startsAt: Date; minutes?: number; /** The guests box as typed. */ guests?: string; /** Left out, a meeting keeps the transcript only and everything else keeps its video. */ keepVideo?: boolean; now?: Date },
 ): Promise<SessionResult> {
   const now = input.now ?? new Date();
   const firstName = input.firstName.trim();
   const email = input.email.trim().toLowerCase();
   if (!firstName || !emailLooksRight(email)) return { ok: false, reason: "details" };
+  const guests = readGuests(input.guests ?? "", email);
+  if (!guests) return { ok: false, reason: "guests" };
   const minutes = Math.min(240, Math.max(15, input.minutes ?? sessionSettingsFor(brand, input.kind).lengthMinutes));
   const endsAt = new Date(input.startsAt.getTime() + minutes * 60_000);
   if (endsAt <= now) return { ok: false, reason: "time" };
@@ -299,6 +342,7 @@ export async function addSession(
           consentWording: input.kind === "meeting" ? PERMISSION_NOT_NEEDED : PERMISSION_PENDING,
           consentAt: now,
           keepVideo: input.keepVideo ?? input.kind !== "meeting",
+          guests,
         })
         .returning();
       const meeting = await deps.provider.create({
@@ -329,6 +373,20 @@ export async function givePermission(db: Db, brand: Brand, input: { sessionId: s
       .returning({ id: recordingSessions.id }),
   );
   return done.length > 0;
+}
+
+/** A guest ticks the permission box on their own page. Saved word for word against that guest, once. */
+export async function giveGuestPermission(db: Db, brand: Brand, input: { sessionId: string; guestId: string; wording: string; now?: Date }): Promise<boolean> {
+  return withSession(db, siteSession(brand.id), async (tx) => {
+    // The row is held while it is changed, so two guests agreeing at once cannot overwrite each other.
+    const [current] = await tx.select().from(recordingSessions).where(eq(recordingSessions.id, input.sessionId)).for("update");
+    const guests = current ? guestsOf(current) : [];
+    const guest = guests.find((g) => g.id === input.guestId);
+    if (!current || current.status === "cancelled" || !guest || guest.consentWording) return false;
+    const agreed = guests.map((g) => (g.id === guest.id ? { ...g, consentWording: input.wording.trim(), consentAt: (input.now ?? new Date()).toISOString() } : g));
+    await tx.update(recordingSessions).set({ guests: agreed }).where(eq(recordingSessions.id, current.id));
+    return true;
+  });
 }
 
 /** Moves a booked session to another time on offer. */

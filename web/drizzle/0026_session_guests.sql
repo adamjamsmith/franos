@@ -1,0 +1,1 @@
+ALTER TABLE "recording_sessions" ADD COLUMN "guests" jsonb DEFAULT '[]'::jsonb NOT NULL;

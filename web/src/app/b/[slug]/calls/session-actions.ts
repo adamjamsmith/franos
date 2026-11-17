@@ -31,6 +31,7 @@ export async function ownerAddSession(form: FormData) {
     firstName: text(form, "firstName"),
     lastName: text(form, "lastName"),
     email: text(form, "email"),
+    guests: text(form, "guests"),
     startsAt,
     minutes: Number(text(form, "minutes")) || undefined,
     keepVideo: text(form, "keep") === "video" ? true : text(form, "keep") === "transcript" ? false : undefined,

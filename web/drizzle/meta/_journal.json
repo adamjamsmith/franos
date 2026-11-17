@@ -183,6 +183,13 @@
       "when": 1794850077544,
       "tag": "0025_calendar_busy",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1794929878714,
+      "tag": "0026_session_guests",
+      "breakpoints": true
     }
   ]
 }

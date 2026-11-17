@@ -8,11 +8,11 @@ import { withSession } from "@/db/context";
 import { recordingSessions } from "@/db/schema";
 import { sign } from "@/email/render";
 import { emailSettingsFor } from "@/email/render";
-import { hasPermission, KIND_LABELS, sessionConsentWording, sessionLinkOk, sessionSlots, type SessionKind } from "@/sessions/sessions";
+import { guestAgreed, guestLinkOk, guestsOf, hasPermission, KIND_LABELS, sessionConsentWording, sessionLinkOk, sessionSlots, type SessionKind } from "@/sessions/sessions";
 import { siteFor } from "@/site/config";
 import { publicBrand } from "@/site/brand";
 import { siteSession } from "@/site/leads";
-import { agreeMine, cancelMine, moveMine } from "../../actions";
+import { agreeGuest, agreeMine, cancelMine, moveMine } from "../../actions";
 
 const notices: Record<string, string> = {
   booked: "Your session is booked. We have emailed you the details.",
@@ -28,12 +28,16 @@ const problems: Record<string, string> = {
 /**
  * The page for one booked session: its details, and where the person moves or cancels it.
  * Reached from the signed link in their emails, so it needs no login and cannot be guessed.
+ * A guest's link opens the same page without the moving and cancelling: the details, the Zoom link and their own permission box.
  */
 export default async function BookedSessionPage({ params, searchParams }: PageProps<"/site/[slug]/session/booked/[id]">) {
   const { slug, id } = await params;
   const query = await searchParams;
   const signature = typeof query.s === "string" ? query.s : "";
-  if (!/^[0-9a-f-]{36}$/i.test(id) || !sessionLinkOk(id, signature)) notFound();
+  const guestId = typeof query.g === "string" ? query.g : "";
+  const guestSignature = typeof query.gs === "string" ? query.gs : "";
+  const allowed = guestId ? guestLinkOk(id, guestId, guestSignature) : sessionLinkOk(id, signature);
+  if (!/^[0-9a-f-]{36}$/i.test(id) || !allowed) notFound();
   const brand = await publicBrand(slug);
   const now = new Date();
 
@@ -41,10 +45,14 @@ export default async function BookedSessionPage({ params, searchParams }: PagePr
     const [session] = await tx.select().from(recordingSessions).where(eq(recordingSessions.id, id));
     if (!session) return null;
     const open = session.status === "booked" && session.startsAt > now;
-    return { session, open, days: open ? await sessionSlots(tx, brand, now, session.kind, session.id) : [] };
+    return { session, open, days: open && !guestId ? await sessionSlots(tx, brand, now, session.kind, session.id) : [] };
   });
   if (!found) notFound();
   const { session, open, days } = found;
+  const guest = guestId ? guestsOf(session).find((g) => g.id === guestId) : undefined;
+  if (guestId && !guest) notFound();
+  const agreed = guest ? guestAgreed(session, guest) : hasPermission(session);
+  const key = guest ? `g=${guest.id}&gs=${guestSignature}` : `s=${sign(`session|${session.id}`)}`;
   const done = typeof query.done === "string" ? notices[query.done] : undefined;
   const problem = typeof query.problem === "string" ? problems[query.problem] : undefined;
   const hidden = (
@@ -52,6 +60,8 @@ export default async function BookedSessionPage({ params, searchParams }: PagePr
       <input type="hidden" name="slug" value={slug} />
       <input type="hidden" name="sessionId" value={session.id} />
       <input type="hidden" name="s" value={signature} />
+      <input type="hidden" name="g" value={guestId} />
+      <input type="hidden" name="gs" value={guestSignature} />
     </>
   );
 
@@ -72,8 +82,8 @@ export default async function BookedSessionPage({ params, searchParams }: PagePr
         )}
       </div>
 
-      {session.status !== "cancelled" && !hasPermission(session) && (
-        <form action={agreeMine} className="flex flex-col gap-3 rounded-md border border-amber-300 bg-amber-50 p-3">
+      {session.status !== "cancelled" && !agreed && (
+        <form action={guest ? agreeGuest : agreeMine} className="flex flex-col gap-3 rounded-md border border-amber-300 bg-amber-50 p-3">
           {hidden}
           <label className="flex items-start gap-3 text-sm leading-relaxed text-neutral-800">
             <input type="checkbox" name="consent" required className="mt-0.5 h-5 w-5 shrink-0" />
@@ -96,17 +106,21 @@ export default async function BookedSessionPage({ params, searchParams }: PagePr
                 Join on Zoom
               </a>
             )}
-            <a href={`/site/${slug}/session/booked/${session.id}/calendar?s=${sign(`session|${session.id}`)}`} className="self-center underline">
+            <a href={`/site/${slug}/session/booked/${session.id}/calendar?${key}`} className="self-center underline">
               Add it to my calendar
             </a>
           </p>
-          <div className="border-t border-neutral-200 pt-4">
-            <SessionMove action={moveMine} hidden={{ slug, sessionId: session.id, s: signature }} days={calendarDays(days)} />
-          </div>
-          <form action={cancelMine}>
-            {hidden}
-            <button className="text-sm text-neutral-600 underline">Cancel this session</button>
-          </form>
+          {!guest && (
+            <>
+              <div className="border-t border-neutral-200 pt-4">
+                <SessionMove action={moveMine} hidden={{ slug, sessionId: session.id, s: signature }} days={calendarDays(days)} />
+              </div>
+              <form action={cancelMine}>
+                {hidden}
+                <button className="text-sm text-neutral-600 underline">Cancel this session</button>
+              </form>
+            </>
+          )}
         </>
       )}
       {/* This page has no footer, so the privacy notice is linked here. */}

@@ -17,12 +17,18 @@ import {
   bookSession,
   cancelSession,
   deleteSession,
+  giveGuestPermission,
   givePermission,
+  guestAgreed,
+  guestLinkOk,
+  guestPath,
+  guestsOf,
   hasPermission,
   isBookableKind,
   listSessions,
   moveSession,
   PERMISSION_PENDING,
+  readGuests,
   sessionConsentWording,
   sessionSettingsFor,
   type SessionDeps,
@@ -529,5 +535,107 @@ describe("the real Zoom, tidying up", () => {
       { name: "Audio only - Adam", url: "https://zoom.us/rec/play/p1" },
       { name: "Audio only - Ali", url: "https://zoom.us/rec/download/p2" },
     ]);
+  });
+});
+
+describe("guests", () => {
+  const today4pm = at("2026-03-02T16:00:00Z");
+  const sam = "sam@example.test";
+  const jo = "jo@example.test";
+
+  it("reads the guests box, leaving out the person booking and anything typed twice", () => {
+    expect(readGuests("", "ali@example.test")).toEqual([]);
+    expect(readGuests(" Sam@Example.test, jo@example.test\nsam@example.test; ali@example.test ", "ali@example.test")?.map((g) => g.email)).toEqual([sam, jo]);
+    expect(readGuests("sam@example.test, not an email", "ali@example.test")).toBeNull();
+    expect(readGuests(Array.from({ length: 6 }, (_, i) => `g${i}@example.test`).join(","), "ali@example.test")).toBeNull();
+  });
+
+  it("books nothing when a guest's email address is wrong", async () => {
+    expect(await book(wed9, { guests: "sam@example" })).toEqual({ ok: false, reason: "guests" });
+    expect(await all()).toHaveLength(0);
+    expect(meetings).toEqual([]);
+  });
+
+  it("invites each guest from a booking link, with a page of their own that cannot move or cancel", async () => {
+    const result = await book(wed9, { guests: `${sam}, ${jo}` });
+    if (!result.ok) throw new Error("not booked");
+    const session = await one(result.sessionId);
+    const [guest] = guestsOf(session);
+    expect(guestsOf(session).map((g) => g.email)).toEqual([sam, jo]);
+    expect(subjectsTo(sam)).toEqual(["You are invited to a testimonial: Wednesday 4 March at 9:00am"]);
+    expect(subjectsTo(jo)).toHaveLength(1);
+    const mail = outbox.find((m) => m.to === sam);
+    expect(mail?.text).toContain("Ali Khan has added you");
+    expect(mail?.text).toContain("https://zoom.example/m1");
+    expect(mail?.text).toContain("tick the box to agree");
+    // Their link is their own: it is not the booker's, which could move or cancel the session.
+    expect(mail?.text).toContain(`g=${guest.id}`);
+    expect(mail?.text).not.toContain(sessionPath("refresh", session.id).split("?")[1]);
+    const signature = new URL(`https://x${guestPath("refresh", session.id, guest.id)}`).searchParams.get("gs") ?? "";
+    expect(guestLinkOk(session.id, guest.id, signature)).toBe(true);
+    expect(guestLinkOk(session.id, guestsOf(session)[1].id, signature)).toBe(false);
+    expect(sessionLinkOk(session.id, signature)).toBe(false);
+  });
+
+  it("holds each guest's own permission, word for word, and never the booker's for them", async () => {
+    const result = await book(wed9, { guests: `${sam}, ${jo}` });
+    if (!result.ok) throw new Error("not booked");
+    const [first, second] = guestsOf(await one(result.sessionId));
+    expect(guestAgreed(await one(result.sessionId), first)).toBe(false);
+    const later = at("2026-03-03T12:00:00Z");
+    expect(await giveGuestPermission(db, seed.refresh, { sessionId: result.sessionId, guestId: first.id, wording, now: later })).toBe(true);
+    const after = guestsOf(await one(result.sessionId));
+    expect(after[0]).toMatchObject({ email: sam, consentWording: wording, consentAt: later.toISOString() });
+    expect(after[1].consentWording).toBeUndefined();
+    expect(guestAgreed(await one(result.sessionId), after[1])).toBe(false);
+    // It cannot be overwritten, and nobody who is not a guest can agree.
+    expect(await giveGuestPermission(db, seed.refresh, { sessionId: result.sessionId, guestId: first.id, wording: "something else" })).toBe(false);
+    expect(await giveGuestPermission(db, seed.refresh, { sessionId: result.sessionId, guestId: "00000000-0000-4000-8000-000000000000", wording })).toBe(false);
+    expect(guestsOf(await one(result.sessionId))[0].consentWording).toBe(wording);
+    // Another brand's pages cannot reach the session.
+    expect(await giveGuestPermission(db, seed.oven, { sessionId: result.sessionId, guestId: second.id, wording })).toBe(false);
+  });
+
+  it("tells guests when the session moves or is cancelled, and reminds them", async () => {
+    const result = await book(wed9, { guests: sam });
+    if (!result.ok) throw new Error("not booked");
+    await run(at("2026-03-03T09:00:00Z"));
+    expect(subjectsTo(sam)).toContain("Tomorrow: your testimonial with Refresh Renovation");
+    await moveSession(db, siteSession(seed.refresh.id), seed.refresh, deps, { sessionId: result.sessionId, startsAt: at("2026-03-06T09:00:00Z"), now: at("2026-03-03T09:05:00Z") });
+    expect(subjectsTo(sam)).toContain("The testimonial you were invited to has moved: Friday 6 March at 9:00am");
+    expect(subjectsTo("ali@example.test")).toContain("Your testimonial has moved: Friday 6 March at 9:00am");
+    await cancelSession(db, siteSession(seed.refresh.id), seed.refresh, deps, { sessionId: result.sessionId, now: at("2026-03-03T09:10:00Z") });
+    expect(subjectsTo(sam)).toContain("The testimonial you were invited to has been cancelled");
+    // A cancelled session takes no more permissions.
+    const [guest] = guestsOf(await one(result.sessionId));
+    expect(await giveGuestPermission(db, seed.refresh, { sessionId: result.sessionId, guestId: guest.id, wording })).toBe(false);
+  });
+
+  it("still tells everyone else when one guest's email cannot be sent", async () => {
+    deps = { ...deps, deliver: (mail) => (mail.to === sam ? Promise.reject(new Error("bounced")) : void outbox.push(mail)) };
+    const result = await book(wed9, { guests: `${sam}, ${jo}` });
+    expect(result.ok).toBe(true);
+    expect(subjectsTo("ali@example.test")).toHaveLength(1);
+    expect(subjectsTo(jo)).toHaveLength(1);
+    expect(subjectsTo(adam.email)).toHaveLength(1);
+  });
+
+  it("lets the owner add guests to a session they book, and asks a meeting's guests for no permission", async () => {
+    const add = (over: Partial<Parameters<typeof addSession>[4]>) =>
+      addSession(db, owner(), seed.refresh, deps, { kind: "franchisor", firstName: "John", lastName: "English", email: "john.e@example.test", startsAt: today4pm, now, ...over });
+    expect(await add({ guests: "nope" })).toEqual({ ok: false, reason: "guests" });
+    const interview = await add({ guests: sam });
+    if (!interview.ok) throw new Error("not added");
+    const [guest] = guestsOf(await one(interview.sessionId));
+    expect(guestAgreed(await one(interview.sessionId), guest)).toBe(false);
+    expect(outbox.find((m) => m.to === sam)?.text).toContain("tick the box to agree");
+
+    const meeting = await add({ kind: "meeting", guests: jo, startsAt: at("2026-03-02T18:00:00Z") });
+    if (!meeting.ok) throw new Error("not added");
+    const [guestAtMeeting] = guestsOf(await one(meeting.sessionId));
+    expect(guestAgreed(await one(meeting.sessionId), guestAtMeeting)).toBe(true);
+    const mail = outbox.find((m) => m.to === jo);
+    expect(mail?.text).toContain("recorded, so we have notes");
+    expect(mail?.text).not.toContain("tick the box");
   });
 });

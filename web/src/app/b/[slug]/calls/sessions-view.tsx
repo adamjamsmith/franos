@@ -3,7 +3,7 @@ import type { SoundFile } from "@/calls/provider";
 import { ukTime, ukWhen } from "@/calls/time";
 import { ConfirmButton } from "@/components/confirm-button";
 import { CopyLink } from "@/components/copy-link";
-import { BOOKABLE_KINDS, bookingPath, hasPermission, KIND_LABELS, personName, type RecordingSession, SESSION_KINDS, type SessionKind, sessionPath } from "@/sessions/sessions";
+import { BOOKABLE_KINDS, bookingPath, guestAgreed, guestPath, guestsOf, hasPermission, KIND_LABELS, personName, type RecordingSession, SESSION_KINDS, type SessionKind, sessionPath } from "@/sessions/sessions";
 import { ownerAddSession, ownerCancelSession, ownerDeleteSession } from "./session-actions";
 
 const line = "border-neutral-300 dark:border-neutral-700";
@@ -42,6 +42,7 @@ export const sessionState = (session: RecordingSession, now: Date) =>
 
 const PROBLEMS: Record<string, string> = {
   details: "A first name and a real email address are needed.",
+  guests: "One of the guests' email addresses is not right, or there are more than 5.",
   time: "That date and time is not valid, or has already passed.",
   taken: "That time clashes with another session or a call.",
 };
@@ -125,6 +126,9 @@ export function SessionsView({ brand, sessions, now, problem, done }: { brand: {
                 ))}
               </select>
             </Field>
+            <Field label="Guests (optional): their email addresses, separated by commas" className="col-span-2 sm:col-span-6">
+              <input name="guests" autoComplete="off" className={box} />
+            </Field>
             <div className="col-span-2 flex flex-wrap items-center gap-3 sm:col-span-6">
               <button className="inline-flex h-8 items-center gap-1.5 rounded-md bg-neutral-900 px-3 text-xs font-semibold text-white hover:opacity-90 dark:bg-white dark:text-neutral-900">
                 <Svg>
@@ -153,6 +157,7 @@ export function SessionsView({ brand, sessions, now, problem, done }: { brand: {
           const state = sessionState(session, now);
           const sounds = (session.soundFiles ?? []) as SoundFile[];
           const isUpcoming = session.status === "booked" && session.endsAt > now;
+          const guests = guestsOf(session);
           const hidden = (
             <>
               <input type="hidden" name="slug" value={brand.slug} />
@@ -169,6 +174,7 @@ export function SessionsView({ brand, sessions, now, problem, done }: { brand: {
                 <span className="flex w-40 shrink-0 flex-wrap items-center gap-1">
                   <span className={`rounded px-1.5 py-0.5 text-xs ${state.colour}`}>{state.says}</span>
                   {!hasPermission(session) && session.status !== "cancelled" && <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-xs">No permission yet</span>}
+                  {session.status !== "cancelled" && guests.some((g) => !guestAgreed(session, g)) && <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-xs">Guest has not agreed</span>}
                 </span>
                 <span className="flex w-28 shrink-0 items-center justify-end">
                   {session.recordingUrl && (
@@ -233,6 +239,15 @@ export function SessionsView({ brand, sessions, now, problem, done }: { brand: {
                   </p>
                 )}
                 {session.transcript && <p className="max-h-80 overflow-y-auto whitespace-pre-line text-xs text-neutral-700 dark:text-neutral-300">{session.transcript}</p>}
+                {guests.map((guest) => (
+                  <p key={guest.id} className={`flex flex-wrap items-center gap-2 ${small}`}>
+                    <span>
+                      Guest: {guest.email} ·{" "}
+                      {guest.consentAt ? `agreed ${ukWhen(new Date(guest.consentAt))}` : guestAgreed(session, guest) ? "no permission needed" : "has not ticked the permission box yet"}
+                    </span>
+                    {isUpcoming && <CopyLink path={guestPath(brand.slug, session.id, guest.id)} label={`Copy the link to ${guest.email}'s own page`} text="Copy their page link" />}
+                  </p>
+                ))}
                 <p className={small}>{hasPermission(session) ? `Agreed ${ukWhen(session.consentAt)}: ${session.consentWording}` : "They have not ticked the permission box on their page yet."}</p>
               </div>
             </details>

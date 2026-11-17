@@ -24,6 +24,8 @@ export type SessionEmailInput = {
   agreed: boolean;
   /** A working meeting: recorded for notes, with no permission to ask for. */
   notesOnly?: boolean;
+  /** Set when the email goes to a guest: its links open the guest's own page, which cannot move or cancel anything. */
+  guestId?: string;
 };
 
 const RECORDED = "The session is recorded on video, as you agreed when you booked.";
@@ -34,21 +36,39 @@ export const sessionManageLink = (baseUrl: string, slug: string, sessionId: stri
 export const sessionCalendarLink = (baseUrl: string, slug: string, sessionId: string) =>
   `${baseUrl}/site/${slug}/session/booked/${sessionId}/calendar?s=${sign(`session|${sessionId}`)}`;
 
+const guestKey = (sessionId: string, guestId: string) => `g=${guestId}&gs=${sign(`session-guest|${sessionId}|${guestId}`)}`;
+
 export function sessionEmail(kind: SessionEmailKind, input: SessionEmailInput): Rendered {
   const hi = `Hi ${input.firstName.trim() || "there"},`;
   const what = LABELS[input.kind];
-  const manage = { label: "Change or cancel the session", url: sessionManageLink(input.baseUrl, input.slug, input.sessionId) };
+  const page = `${input.baseUrl}/site/${input.slug}/session/booked/${input.sessionId}`;
+  const guest = input.guestId ? guestKey(input.sessionId, input.guestId) : null;
+  const manage = guest
+    ? { label: "Open the session page", url: `${page}?${guest}` }
+    : { label: "Change or cancel the session", url: sessionManageLink(input.baseUrl, input.slug, input.sessionId) };
   const join = input.joinUrl ? [{ label: "Join on Zoom", url: input.joinUrl }] : [];
-  const calendar = { label: "Add it to my calendar", url: sessionCalendarLink(input.baseUrl, input.slug, input.sessionId) };
+  const calendar = { label: "Add it to my calendar", url: guest ? `${page}/calendar?${guest}` : sessionCalendarLink(input.baseUrl, input.slug, input.sessionId) };
   const base = { brandName: input.brandName, site: input.site, footer: input.footer };
+  // A guest did not book it, so it is not called theirs when it moves or is cancelled.
+  const yours = guest ? `The ${what} you were invited to` : `Your ${what}`;
   const recorded = input.notesOnly
     ? "The meeting is recorded, so we have notes of what was said."
     : input.agreed
-      ? RECORDED
+      ? guest
+        ? "The session is recorded on video, as you agreed."
+        : RECORDED
       : "The session is recorded on video. Before we start, please open the session page below and tick the box to agree to that.";
   if (!input.agreed) manage.label = "Open the session page";
   switch (kind) {
     case "confirmation":
+      if (guest) {
+        return layout({
+          ...base,
+          subject: `You are invited to a ${what}: ${input.when}`,
+          paragraphs: [hi, `${input.personName} has added you to a ${what} with ${input.brandName} on ${input.when}. It is on Zoom and takes about ${input.minutes} minutes.`, recorded],
+          links: [...join, calendar, manage],
+        });
+      }
       return layout({
         ...base,
         subject: `Your ${what} is booked: ${input.when}`,
@@ -58,15 +78,15 @@ export function sessionEmail(kind: SessionEmailKind, input: SessionEmailInput): 
     case "changed":
       return layout({
         ...base,
-        subject: `Your ${what} has moved: ${input.when}`,
-        paragraphs: [hi, `Your ${what} with ${input.brandName} is now at ${input.when}.`, recorded],
+        subject: `${yours} has moved: ${input.when}`,
+        paragraphs: [hi, `${yours} with ${input.brandName} is now at ${input.when}.`, recorded],
         links: [...join, calendar, manage],
       });
     case "cancelled":
       return layout({
         ...base,
-        subject: `Your ${what} has been cancelled`,
-        paragraphs: [hi, `Your ${what} with ${input.brandName} on ${input.when} has been cancelled.`],
+        subject: `${yours} has been cancelled`,
+        paragraphs: [hi, `${yours} with ${input.brandName} on ${input.when} has been cancelled.`],
         links: [],
       });
     case "reminder_day":

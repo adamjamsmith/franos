@@ -53,7 +53,7 @@ const GLOBE = "M12 3a9 9 0 100 18 9 9 0 000-18zM3 12h18M12 3c2.500 2.700 2.500 1
  * the details to fill in. A mistake keeps everything typed and marks what needs fixing.
  */
 export function SessionForm({ slug, kind, code, days, brandName, logoUrl, title, says, minutes, askLocation, consentWording, privacyLink }: Props) {
-  const empty: SessionFormState = { values: { firstName: "", lastName: "", email: "", location: "", startsAt: "", consent: false } };
+  const empty: SessionFormState = { values: { firstName: "", lastName: "", email: "", location: "", guests: "", startsAt: "", consent: false } };
   const [state, action, pending] = useActionState(bookFromLink, empty);
   const { values, problem } = state;
   const details = problem === "details";
@@ -160,6 +160,20 @@ export function SessionForm({ slug, kind, code, days, brandName, logoUrl, title,
                 <input name="location" required defaultValue={values.location} placeholder="The area your franchise covers" className={`${input} ${details && !values.location ? wrong : ""}`} />
               </label>
             )}
+            <label>
+              <span className={label}>
+                Add guests <span className="font-normal text-neutral-500">(optional)</span>
+              </span>
+              <input
+                name="guests"
+                defaultValue={values.guests}
+                autoComplete="off"
+                placeholder="Their email addresses, separated by commas"
+                className={`${input} ${problem === "guests" ? wrong : ""}`}
+              />
+              <span className="mt-1 block text-sm text-neutral-600">Each guest is emailed the Zoom link and asked to agree to the recording themselves.</span>
+              {problem === "guests" && <span className={hint}>Please check the guests&apos; email addresses. You can add up to 5.</span>}
+            </label>
             {details && <span className={hint}>Please check the boxes marked in red.</span>}
             <div>
               <label className="flex items-start gap-3 text-sm leading-relaxed text-neutral-800">

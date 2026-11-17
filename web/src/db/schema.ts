@@ -434,6 +434,11 @@ export const recordingSessions = pgTable(
     /** The permission the person ticked, word for word, and when. This is the permission held for any advert made from the session. */
     consentWording: text("consent_wording").notNull(),
     consentAt: timestamp("consent_at", { withTimezone: true }).notNull(),
+    /**
+     * Other people invited to the session. Each ticks the permission box for themselves on their own page.
+     * Shape: { id, email, consentWording?, consentAt? }[].
+     */
+    guests: jsonb("guests").notNull().default([]),
     /** False keeps the transcript and sound only: the video is removed from the video-call service once the transcript is saved. */
     keepVideo: boolean("keep_video").notNull().default(true),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
