@@ -31,6 +31,10 @@ Starts with the five lines from the Charter (brand, loop step, measure, expected
 ## Save as you go
 Whenever an agent is added, removed or changed, redraw Adam's agent map in the same piece of work (https://claude.ai/artifact/XdQG3iQ3FzCFhw1zLJ9rKK: read it, update it, republish to the same link, change the "Drawn" date). It does not update by itself.
 
+**Commit without being asked** (Adam, 18 Nov 2026: "I'm not going to commit things... I'm going to forget to"). When a piece of work is finished and checked, commit it with a clear message. Never push without asking.
+
+**Adam's to-do list** is a Claude doc he ticks off: https://claude.ai/artifact/9WjRJ7gBESbQa3pMyyZ3iq. Anything he needs to do goes there, not only in chat. Two timers feed it: the morning check (Tuesday to Friday, 9am) and the Monday brief (9am). Both read and draft only.
+
 Before a session ends: new decisions go into the decisions log (dated); client progress goes into `status.md`; anything parked goes into `docs/08-later-list.md`.
 
 ## Never
