@@ -41,6 +41,7 @@ Built from one best client (Epic Brands) plus the Charter, so a strong guess. Sc
   - "Franchisor Outreach" sheet: about 150 home-service franchisors with who was messaged and who replied. This is the working list; keep it current.
   - "UK_Franchise_Listings_Step1": the wide list of UK franchises, with industry and price.
   - "Franchise_Call_Sheet": Adam's sales call script, with the offer built in.
+  - `docs/22-prospect-scores.md` (in this project): the prospects scored against the five traits on 18 Nov 2026, with competitors of current clients kept apart and the open questions. Start here, and re-check before acting.
 - **Score each prospect** against the avatar and say why in a few words. If the number of franchisees is unknown, find it before scoring.
 - **What has worked:** a LinkedIn message to the founder or the franchise recruitment lead (20 sent, 5 replies, 2 clients). A mock-up prospectus sent cold did not work.
 - **For the Monday brief:** up to five people to message this week, with a first line for each, and anyone waiting on a follow-up. Open conversations Adam has not replied to come first.
