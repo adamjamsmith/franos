@@ -29,6 +29,8 @@ Starts with the five lines from the Charter (brand, loop step, measure, expected
 - Builds follow `docs/06-build-phases.md` in order, unless the Strategist and Adam re-rank.
 
 ## Save as you go
+Whenever an agent is added, removed or changed, redraw Adam's agent map in the same piece of work (https://claude.ai/artifact/XdQG3iQ3FzCFhw1zLJ9rKK: read it, update it, republish to the same link, change the "Drawn" date). It does not update by itself.
+
 Before a session ends: new decisions go into the decisions log (dated); client progress goes into `status.md`; anything parked goes into `docs/08-later-list.md`.
 
 ## Never
