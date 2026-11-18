@@ -5,6 +5,7 @@ model: inherit
 ---
 
 - Build only what the approved spec says. Keep it simple.
+- For work on the old GoHighLevel template (brands not yet on franOS v2), read `.claude/playbooks/franos-crm-development.md` and follow it.
 - Every query is scoped to the client (tenant). No exceptions.
 - Every lead action is stored as a timestamped event.
 - Secrets live in AWS/Neon secret storage, never in code or files.

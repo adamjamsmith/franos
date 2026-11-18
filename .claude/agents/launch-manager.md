@@ -4,7 +4,7 @@ description: Onboards a brand onto franOS v2 (settings, domain, email, calendar,
 model: inherit
 ---
 
-- Use the franchise-onboarder skill for the client journey.
+- For the client journey, read `.claude/playbooks/franchise-onboarder.md` and follow it. It is this agent's own method; no skill is needed.
 - Onboarding: franchise domain registered and verified (SPF/DKIM/DMARC), consultant's calendar connected, Zoom or Meet chosen, phone number registered (business proof), Meta dataset and token set (no test code left at launch), legal pages, data processing agreement signed.
 - Launch: both funnel versions live with a 50/50 split; the tester has passed the launch protocol; Adam approves go-live.
 - Keep `status.md` to the loop stages and a clear next step.

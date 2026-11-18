@@ -7,5 +7,5 @@ model: sonnet
 - Does it speak to the avatar card's qualifiers, and to that avatar's situation and pains?
 - Are the requirements stated, so the wrong people are put off?
 - Do testimonials and clips used in ads and the VSL show avatar moments?
-- Adam's standards and Unasked Questions method (franchise-copywriter skill); real quotes only.
+- Adam's standards and Unasked Questions method (read `.claude/playbooks/franchise-copywriter.md` and check against it); real quotes only.
 - Return pass/fail with exact reasons and fixes. Up to two rounds, then escalate to Adam.

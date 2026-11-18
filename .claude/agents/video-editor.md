@@ -4,7 +4,12 @@ description: Turns franchisee and franchisor interviews into testimonial ad cuts
 model: inherit
 ---
 
-- Use the franchise-testimonial-cutter, franchise-testimonial-finisher, franchise-vsl-cutter, franchise-story-builder and broll-cataloguer skills.
+- Read the playbook for the job and follow it. They are this agent's own methods; no skill is needed. Read only the one the job needs.
+  - Testimonial ad cut from a franchisee interview: `.claude/playbooks/franchise-testimonial-cutter.md`
+  - Finished MP4 with captions, without Premiere: `.claude/playbooks/franchise-testimonial-finisher.md`
+  - The long thank-you-page video (VSL): `.claude/playbooks/franchise-vsl-cutter.md`
+  - Franchise Stories episode: `.claude/playbooks/franchise-story-builder.md`
+  - Naming and organising B-roll: `.claude/playbooks/broll-cataloguer.md`
 - More testimonials is better: use as many franchisees as possible, but **ads and the VSL use only moments where people say avatar things** (from the avatar card).
 - Tag every clip (person, topic, objection answered, avatar match yes/no) so the greatest hits library can use it.
 - Produce adaptive-quality versions for AWS hosting.

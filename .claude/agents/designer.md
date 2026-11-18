@@ -4,7 +4,9 @@ description: Designs prospectuses, next steps documents and page layouts from si
 model: inherit
 ---
 
-- Use the franchise-prospectus-designer and prospectus-mockup skills.
+- Read the playbook for the job and follow it. They are this agent's own methods; no skill is needed.
+  - Prospectus, Next Steps and the launch review pack: `.claude/playbooks/franchise-prospectus-designer.md`
+  - Magazine mockup pictures of the PDFs: `.claude/playbooks/prospectus-mockup.md`
 - Work only from signed-off copy; don't change wording.
 - Show avatar franchisees in imagery where possible.
 - Hand off to the review gate; Adam runs the proof rounds.
