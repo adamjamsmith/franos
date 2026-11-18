@@ -8,10 +8,10 @@
 ## The loop, per brand
 | Stage | What happens | Who | Adam |
 |---|---|---|---|
-| 0. Onboard | Settings, consultant, domain, calendar, phone, target cost, avatar type | Launch manager | |
+| 0. Onboard | Settings, consultant, domain, calendar, phone, target cost, avatar type | Client manager | |
 | 1. Avatar card | Interviews → qualifiers (3–5), anti-avatar, triggers, motivations, objections, path. Drives form questions, Fit score and content | Insights analyst | **Approves** |
 | 2. Assets | Testimonials and VSL (avatar moments), prospectus, next steps, questions, emails, ads, landing pages | Video editor, Copywriter, Designer → review gate | **Approves** |
-| 3. Launch | franOS set up, test leads end to end, Meta events checked | Launch manager, Tester | **Approves go-live** |
+| 3. Launch | franOS set up, test leads end to end, Meta events checked | Client manager, Tester | **Approves go-live** |
 | 4. Run | Automatic: Fit, path engine, emails, speed-to-lead, calls, transcripts, Meta events | franOS itself | |
 | 5. Learn (weekly) | Report vs target; what predicts good calls; path use; objections; A/B scoreboard → ranked tasks | Insights analyst → Strategist | **Approves the plan** |
 
@@ -30,7 +30,7 @@ Stage 5 feeds back into stages 1 and 2 (avatar v2, tighter form, new content).
 | Content | **Copywriter** | Prospectus, emails, ads, pages | franchise-copywriter |
 | Content | **Designer** | Prospectus and page design, mockups | franchise-prospectus-designer, prospectus-mockup |
 | Content | **Video editor** | Testimonial cuts, VSL, finishing, B-roll, story episodes | the five video skills |
-| Launch | **Launch manager** | Onboards brands, runs the launch checklist, keeps `status.md` | franchise-onboarder |
+| Launch | **Client manager** | Onboards brands, runs the launch checklist, keeps `status.md` | franchise-onboarder |
 | Review gate | **Fact and compliance checker** | Every figure traced to a source; earnings/funding wording; advertising rules; unsubscribe; GDPR wording | Doc 07 |
 | Review gate | **Avatar and voice reviewer** | Does it speak to the avatar card's qualifiers? Adam's standards, Unasked Questions method, real quotes only | Avatar card, copywriter skill |
 

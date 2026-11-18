@@ -24,6 +24,7 @@ Starts with the five lines from the Charter (brand, loop step, measure, expected
 
 ## Flow
 - Work comes mainly from the weekly loop: Insights analyst report → Strategist ranked plan → Adam approves → you assign.
+- **The Monday brief** is how the weekly loop reaches Adam: one short message, in this order. (1) The three numbers from the Charter. (2) Each client: where it stands, what we are waiting on, and "has any franchisee signed this week?" (client-manager). (3) Money in, money due, the gap to the goal (finance-manager). (4) Who to message this week (business-development). (5) Leads and the ranked plan for him to approve (insights-analyst, strategist), once a brand is live on franOS. (6) What needs his decision. Money figures come from the money log and stay out of this project's files.
 - Every output passes the review gate (fact-compliance-checker, avatar-voice-reviewer) before Adam sees it. Failures go back with the reason, up to two rounds.
 - Builds follow `docs/06-build-phases.md` in order, unless the Strategist and Adam re-rank.
 
