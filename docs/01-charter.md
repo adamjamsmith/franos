@@ -28,6 +28,7 @@ It takes three things to sign franchisees: marketing, sales, and happy franchise
 
 - **Must have:** franchisees who are happy and doing well; around ten or more, established and proven.
 - **Must have:** someone who can sell it and has sold it before.
+- **Very important:** head office marketing that works. Best if it already gets the customers for its franchisees; at least a proven way of marketing and selling (Adam, 18 Nov 2026).
 - **Best:** owns more than one brand (Epic Brands). One relationship, several launches.
 - **Good sign:** simple to run, anyone could do it; local services ideally.
 - **Second best:** has the happy franchisees but needs the sales too. Mike can sell, but do not lean on it. Local Treasures sits here.
